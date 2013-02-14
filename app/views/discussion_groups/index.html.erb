@@ -1,0 +1,106 @@
+<script type="text/javascript" src="/javascripts/discussion_groups.js"></script>
+<span class="blue_header">
+  My Groups
+  <span class="group_search_form_container">
+    <%= form_for :discussion_group, :url=>{:controller=>:discussion_groups, :action => 'search_groups'} do |f|  %>
+      <input id="search_group_text" type="text" name="search_text" value="Search public groups" class="group_search_text " onfocus="cleartext();" />
+      <span class="text_place_holder hidden_element">Search public groups</span>
+      <!--<a class="group_search_btn" href="javascript:void(0);">Search</a>-->
+      <input type="submit" class="blue_btn" value="Search" onclick="return search_groups()"/>
+    <% end %>
+  </span>
+</span>
+<% unless @is_current_user %>
+  <div align="center" class="clear_both group_create_link_div">
+    <a class="album_action_link" href="javascript:void(0);" onclick="jQuery('#create_group_disc_popup').fadeIn();jQuery('#create_group_disc_popup input[type=text]').val('');jQuery('#create_group_disc_popup textarea').val('');">Create Group</a>
+  </div>
+<% end %>
+<div class="d_grp_conatiner">
+  <span id="no_disc_group_error"><% if @discussion_groups.blank? %>There are no groups available for you.<% end %></span>
+  <% @discussion_groups.each do |disc_group| %>
+    <%= render :partial => "group_block", :locals =>{:disc_group => disc_group } %>
+  <% end %>
+</div>
+
+
+
+<script type="text/javascript">
+  (function($) {
+    
+    $("input.group_search_text").focus(function(){
+      var $this = $(this);
+      var plce_holder = $(this).next(".text_place_holder").html();
+      if($this.val().length!=0 && $this.val()==plce_holder)
+      {
+        $this.val("");
+      }
+    });
+    $("input.group_search_text").blur(function(){
+      var $this = $(this);
+      var plce_holder = $(this).next(".text_place_holder").html();
+      if($this.val().length==0)
+      {
+        $this.val(plce_holder);
+      }
+
+    });
+
+    $(".albums").hover(function(){
+      $(this).find(".album_actions").stop().show().animate({'height':'15px'},"fast");
+    },function(){
+      $(this).find(".album_actions").stop().animate({'height':'0px'},"fast",function(){$(this).hide()});
+    });
+    
+  })(jQuery);
+
+  function edit_group_disc(id)
+  {
+    jQuery.get("/edit_discussion_group/" + id, function(data){
+      jQuery("body").append(jQuery(data));
+    });
+    jQuery('#edit_disc_group_popup').fadeIn();
+  }
+
+
+  function discussion_group_form()
+  {
+    jQuery('.error').html('');
+    var discussion_group_name = jQuery("#discussion_group_name").val();
+    var discussion_group_description = jQuery("#discussion_group_description").val();
+    flag = true;
+    if(jQuery.trim(discussion_group_name).length==0 || discussion_group_name.length==0)
+    {
+      error = "Name can't be blank.";
+      printError("discussion_group_name_error",error);
+      flag = false;
+    }
+    if(discussion_group_name.length>40)
+    {
+      error = "Name can't be of more than 40 characters.";
+      printError("discussion_group_name_error",error);
+      flag = false;
+    }
+    if(jQuery.trim(discussion_group_description).length==0 || discussion_group_description.length==0)
+    {
+      error = "Description can't be blank.";
+      printError("discussion_group_description_error",error);
+      flag = false;
+    }
+    if(discussion_group_description.length>1000)
+    {
+      error = "Description can't be of more than 1000 characters.";
+      printError("discussion_group_description_error",error);
+      flag = false;
+    }
+    return flag;
+
+  }
+
+  function cleartext(){
+    jQuery("#search_group_text").val('');
+  }
+  
+</script>
+<%= render :partial => "create_discussion_group", :layout => false %>
+
+

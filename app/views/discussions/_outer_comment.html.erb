@@ -1,0 +1,182 @@
+<!-- Outer Comment Start here -->
+<%  @other_user.nil? ?  @other_user = current_user : "" %>
+<% comment_new = comment %>
+<% host_url = "http://"+request.host_with_port %>
+<div class="outer_comment_div float_l clear_both <% if @other_user.id==comment.user_id %>current_users_comment<% end %> comment_<%= comment.id %>">
+  <div class="float_l">
+    <a href="javascript:void(0);" class="toggle_comment <% if comment.children.count>0 %>  expand_btn <%  end %> margin_top_five">&nbsp;</a>
+  </div>
+  <div class="<%= box_border_shadow_popup(comment) %>">
+
+    <div class="float_l">
+      <div class="comment_detail_div">
+        <div class="comment_details">
+          <% if comment.comment_type=='URL' %>
+            <span class="comment_text outer_comment_text">
+              <a class="com_title_span" href="<%= comment.comment %>" target="_blank">
+                <%= comment.url_title %>
+              </a>
+            </span>
+            <br/>
+          <% elsif comment.title.present? %>
+            <span class="comment_text outer_comment_text">
+              <span class="com_title_span" >
+                <%= comment.title if comment.title %>
+              </span>
+            </span>
+            <br/>
+          <% end %>
+          <span class="clear_both">
+            <% att = comment.discussion_attachments.first %>
+            <%  if comment.comment_type == "Picture" %>
+              <% image = comment.images.first %>
+              <% if !image.nil? %>
+                <% if image.site_url.present? %>
+                  <a target="_blank" href="<%= image.site_url %>" >
+                    <img src="<%= comment.images.first.photo(:medium) %>" class="clear_both" style="max-width: 540px;"/>
+                  </a>
+                <% else %>
+                  <img src="<%= comment.images.first.photo(:medium) %>" class="clear_both" style="max-width: 540px;"/>
+                <% end %>
+
+              <% end %>
+              <span class="clear_both com_comment">
+                <%= comment.comment if comment.comment  %>
+              </span>
+            <% else %>
+              <span class="clear_both com_comment"><%= comment.comment if comment.comment_type!="URL" %></span>
+              <% att = comment.discussion_attachments.first %>
+              <% if !att.nil? && comment.comment_type =="Document" %>
+                <a href="<%= host_url+""  %><%= att.file %>" class="<%= att.file_content_type=="application/pdf" ? "pdf_file": "word_file" %> disc_attachment_link clear_both"><%= att.description %></a>
+              <% end %>
+            <% end %>
+            <span class="clear_both">
+              by <a href="<%= comment.user.profile_path %>" class="action_link" style="text-decoration:none;font-size: 10px;" title="<%= comment.user.username %>"><%= comment.user.username %></a>
+              at <%= comment.created_at %>
+            </span>
+          </span>
+        </div>
+        <% unless @login_user.is_admin? %>
+          <% if current_user.id == comment.user_id  %>
+            <div class="edit_comment_div hidden_element" style="display: none;">
+              <%  response_comment = comment %>
+              <%= form_for :comment, :url=>{:controller=>:discussions, :action => 'update_comment_responses'}, :remote=>true do |f|  %>
+                <select class="comment_type" name="comment[comment_type]" onchange="set_comment_type($(this))">
+                  <option value="URL" <%= 'selected' if comment.comment_type=='URL' %>>URL</option>
+                  <option value="Comment/Question" <%= 'selected' if comment.comment_type=='Comment/Question' %> >Comment/Question</option>
+                  <option value="Document" <%= 'selected' if comment.comment_type=='Document' %>>Document</option>
+                  <option value="Picture" <%= 'selected' if comment.comment_type=='Picture' %>>Picture</option>
+                </select>
+                <input type="hidden" name="com_level" value="outer"/>
+                <span class="com_title clear_both discussion_frm_heading">Title:</span>
+                <%=  text_field 'comment', 'title', :class=>"float_l comment_title_field",:style=>"width:285px;" ,:maxlength=>"150",:value=>comment.title%>
+                <span class="error title_error clear_both float_l"></span>
+                <span class="com_Description clear_both discussion_frm_heading">
+                  <%= comment.comment_type=="URL" ? "URL" : (comment.comment_type=="Comment/Question" ? "Comment/Question" : "Description") %>:
+                </span>
+                <%= text_area 'comment','comment', :class=>"post_comment_text_area float_l clear_both" ,:value=>comment.comment%>
+                <span class="error url_error clear_both float_l"></span>
+                <span id="disc_type_file" class="clear_both <%= comment.comment_type=='Picture' ? '' : 'hidden_element' %>">
+                  <span class="picture_options_span <%= comment.comment_type=='Picture' ? '' : 'hidden_element' %>">
+                    <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#upload_photo_popup').show();pic_form=jQuery(this).closest('form');">Upload Picture</a>
+                    <a class="pic_options" href="javascript:void(0);" onclick="show_find_photo_for_comment(jQuery(this));">Find Picture</a>
+                  </span>
+                  <span class="upld_pic_span clear_both">
+                    <input type="file" name="com_file" class="com_file clear_both" />
+                    <input type="hidden" name="is_uploaded" id="is_uploaded" value="true"/>
+                    <input type="hidden" name="photo_url" value=""/>
+                    <input type="hidden" name="added_from" value=""/>
+                    <input type="hidden" id="p_id" name="p_id" value="<%=comment.id%>"/>
+                  </span>
+                  <span class="error file_error clear_both float_l"></span>
+                </span>
+                <span class="clear_both">&nbsp;&nbsp;&nbsp;</span>
+
+      <%#= text_area 'response_comment', 'comment', :class=>"post_comment_text_area float_l clear_both"%>
+                <%= hidden_field_tag 'comment[id]', comment.id %>
+                <a class="blue_btn clear_both float_l padding_top_six center_text" onclick='post_comment(jQuery(this));' href="javascript:void(0);">Update</a>
+              <% end%>
+              <a class="action_link no_text_deco float_l cancel_edit_link comman_cancel_link" href="javascript:void(0);">Cancel</a>
+            </div>
+          <% end %>
+        <% end %>
+        <div><%= render :partial=> "discussions/rating_partial", :locals=>{:rating_for => comment} %></div>
+        <div class="post_comment_div">
+          <span class="clear_both">
+            <% unless @login_user.is_admin? %>
+              <a href="javascript:void(0);" class="discussion_action_link comment_link clear_both">Post Comment</a>
+            <% end %>
+            <% if @login_user.is_admin? %>
+              <a href="javascript:void(0);" class="discussion_action_link" onclick="delete_comment(jQuery(this),<%= comment.id %>)">Delete</a>
+            <% elsif current_user.id == comment.user_id  %>
+              <span class="discussion_action_link">&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;</span>
+              <a class="discussion_action_link edit_comment_link" href="javascript:void(0);">Edit</a>
+              <% if comment.children.count<=0 %>
+                <span class="discussion_action_link">&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;</span>
+                <a class="discussion_action_link delete_comment_link" onclick="delete_comment(jQuery(this), <%= comment.id %>)" href="javascript:void(0);">Delete</a>
+              <% end %>
+            <% end %>
+          </span>
+          <% unless @login_user.is_admin? %>
+            <div class="comment_form_div">
+              <% form_for :comment, :url=>{:controller=>:discussions, :action => 'post_comment_responses'},:html=>{:class=>"comment_forms",:multipart => true}, :remote=>true do |f|  %>
+                <select class="comment_type" name="comment[comment_type]" onchange="set_comment_type($(this))">
+                  <option value="URL">URL</option>
+                  <option value="Comment/Question">Comment/Question</option>
+                  <option value="Document">Document</option>
+                  <option value="Picture">Picture</option>
+                </select>
+                <span class="com_title clear_both discussion_frm_heading">Title:</span>
+                <%= text_field 'comment','title', :class=>"float_l comment_title_field",:style=>"width:285px;" ,:maxlength=>"150", :value=>""%>
+                <span class="error title_error clear_both float_l"></span>
+                <span class="com_Description clear_both discussion_frm_heading">URL:</span>
+                <%= text_area 'comment', 'comment', :class=>"post_comment_text_area float_l clear_both", :value=>""%>
+                <span class="error url_error clear_both float_l"></span>
+                <span id="disc_type_file" class="clear_both hidden_element discussion_frm_heading ">
+                  <span class="picture_options_span hidden_element">
+                    <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#upload_photo_popup').show();pic_form=jQuery(this).closest('form');jQuery('#show_discussion_popup').hide();">Upload Picture</a>
+                    <a class="pic_options" href="javascript:void(0);" onclick="show_find_photo_for_comment(jQuery(this));">Find Picture</a>
+                  </span>
+                  <span class="upld_pic_span clear_both">
+                    <input type="file" name="com_file" class="com_file clear_both" />
+                    <input type="hidden" name="is_uploaded" id="is_uploaded" value="true"/>
+                    <input type="hidden" name="photo_url" value=""/>
+                    <input type="hidden" name="added_from" value=""/>
+                    <input type="hidden" id="p_id" name="p_id" value="<%=comment_new.id%>"/>
+                  </span>
+                  <span class="error file_error clear_both float_l"></span>
+                </span>
+                <span class="clear_both">&nbsp;&nbsp;&nbsp;</span>
+                <input type="hidden" name="comment[discussion_id]" value="<%= comment_new.discussion_id %>"/>
+                <%= hidden_field_tag 'comment[parent_id]', comment_new.id %>
+                <a class="blue_btn clear_both float_l padding_top_six center_text" onclick='post_comment(jQuery(this));'>Post Comment</a>
+              <% end %>
+              <!--<%= form_for :response_comment, :url=>{:controller=>:discussions, :action => 'post_comment_responses'}, :remote=>true do |f|  %>
+                <%= text_area 'response_comment', 'comment', :class=>"post_comment_text_area float_l clear_both"%>
+                <%= hidden_field_tag 'response_comment[discussion_id]', comment.discussion_id %>
+                <%= hidden_field_tag 'response_comment[parent_id]', comment.id %>
+                                                         <a class="blue_btn clear_both float_l padding_top_six center_text" onclick='post_comment_response(jQuery(this));'>Post Comment</a>
+              <% end%>-->
+              <a class="action_link no_text_deco float_l cancel_link comman_cancel_link" href="javascript:void(0);">Cancel</a>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div></div>
+  <!-- Comments start here -->
+  <div class="comments_div grey_bg">
+    <%  comment.children.each do |response| %>
+      <%= render :partial=>"discussions/inner_comment", :locals=>{:response=>response,:is_creating=>false} %>
+    <% end %>
+  </div>
+  <!-- Comments end here here -->
+</div>
+<!-- Outer Comment ends here -->
+
+<%# if is_creating %>
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    set_effects();
+  });
+</script>
+<%# end %>

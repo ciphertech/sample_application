@@ -1,0 +1,40 @@
+
+<% if @feeds.blank? %>
+  //jQuery("#feeds_loader").hide();
+  //feed_finish();
+<% else %>
+  var $output_html = jQuery("<%= escape_javascript(render :partial=>"feeds", :locals=>{:feeds => @feeds}).html_safe %>");
+
+  //
+  $output_html.find(".show_rate_it").click(function(){
+            jQuery(this).next().toggle();
+  jQuery(this).text(jQuery(this).text() == 'Rate It' ? 'Cancel' : 'Rate It');
+          });
+
+  $output_html.find('.show_rate_it').bind("click" , function() {
+        jQuery(this).next().toggle();
+        jQuery(this).text(jQuery(this).text() == 'Rate It' ? 'Cancel' : 'Rate It');
+      });
+
+  $output_html.find('.rating_class').raty({
+                          click: function(score, evt) {
+                                  current_object = jQuery(this);
+                                  $(this).parent().submit();
+                          }
+                  });
+
+
+  $output_html.find(".rating_container").each(function(v,i){
+          var value = jQuery(this).children("span").html();
+  if(!jQuery(this).children('.rating_class_fixed').children("img").size()>0)
+  {
+  jQuery(this).children('.rating_class_fixed').raty({
+                                          readOnly:	true,
+                                          start:		value
+                                  });
+  }
+
+  });
+  jQuery(".feeds_block .d_inner_div").append($output_html);
+  set_effects();
+<% end %>

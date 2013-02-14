@@ -1,0 +1,80 @@
+<div class="grey_overlay" id="edit_disc_group_popup" style="display: block;">
+  <div class="pop_up" style="height: 270px">
+    <div class="popup_inner_div">
+      <a href="javascript:void(0);" onclick="jQuery('#edit_disc_group_popup').fadeOut().remove();" class="popup_close_btn">&nbsp;</a>
+      <div class="popup_content">
+        <%= form_for :discussion_group, :url=>{:controller => :discussion_groups, :action => 'edit_discussion_group'}, :remote=>true do |f|  %>
+          <span class="popup_heading" >Rename a Group</span>
+          <table width="100%" class="popup_form_table">
+            <tr>
+              <td  align="left" width="30%"><span class="form_field_name">Name:</span></td>
+              <td align="left" ><%= f.text_field :name, :style=>"width:200px", :id=>"edit_discussion_group_name"%><br/>
+                <span id="edit_discussion_group_name_error" class="form_error"></span>
+              </td>
+            </tr>
+            <tr>
+              <td  align="left" width="30%"><span class="form_field_name">Description:</span></td>
+              <td align="left" ><%= f.text_area :description, :style=>"width:200px;height:50px", :id=>"edit_discussion_group_description"%><br/>
+                <span id="edit_discussion_group_description_error" class="form_error"></span>
+              </td>
+            </tr>
+            <tr>
+              <td align="left" width="30%">
+                <span class="group_privacy_options">
+                  <input <%= "checked" if @discussion_group.is_public %> name="discussion_group[is_public]" value="1" type="radio" class="float_l radio_btn_align" id="public" /><label>Public</label>
+                </span><br/>
+                <span id="group_name_error" class="form_error"></span>
+              </td>
+              <td align="left" width="30%">
+                <span class="group_privacy_options">
+                  <input <%= "checked" if !@discussion_group.is_public %> name="discussion_group[is_public]" value="0" type="radio" class="float_l radio_btn_align" id="private" /><label>Private</label>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="hidden" value="<%= @discussion_group.id %>" id="disc_group_id" name="disc_group[id]"/> </td>
+              <td align="left"><input type="submit" class="blue_btn" value="Update" onclick="return edit_discussion_group();"/></td>
+            </tr>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    jQuery("#edit_disc_group_popup .pop_up").center();
+  });
+
+  function edit_discussion_group()
+  {
+    var edit_discussion_group_name = jQuery("#edit_discussion_group_name").val();
+    var edit_discussion_group_description = jQuery("#edit_discussion_group_description").val();
+    flag = true;
+    if(jQuery.trim(edit_discussion_group_name).length==0 || edit_discussion_group_name.length==0)
+    {
+      error = "Name can't be blank.";
+      printError("edit_discussion_group_name_error",error);
+      flag = false;
+    }
+    if(edit_discussion_group_name.length>40)
+    {
+      error = "Name can't be of more than 40 characters.";
+      printError("edit_discussion_group_name_error",error);
+      flag = false;
+    }
+    if(jQuery.trim(edit_discussion_group_description).length==0 || edit_discussion_group_description.length==0)
+    {
+      error = "Description can't be blank.";
+      printError("edit_discussion_group_description_error",error);
+      flag = false;
+    }
+    if(edit_discussion_group_description.length>1000)
+    {
+      error = "Description can't be of more than 1000 characters.";
+      printError("edit_discussion_group_description_error",error);
+      flag = false;
+    }
+    return flag;
+  }
+</script>

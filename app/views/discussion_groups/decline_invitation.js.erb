@@ -1,0 +1,8 @@
+<% if @accept.class == DiscussionGroupUser %>
+jQuery("#group_invition_<%= @accept.id %>").fadeOut().remove();
+<% if  !DiscussionGroupUser.where("discussion_group_id=? AND is_member=?", @accept.id, false).present? %>
+  jQuery('#search_result_for_group_error').html('There are no invitations available for you.');
+<% end %>
+<% else %>
+
+<% end %>

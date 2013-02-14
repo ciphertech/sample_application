@@ -1,0 +1,9 @@
+<% for user in @users %>
+  <div class="search_result_users_div">
+    <a href="<%= get_user_by_user_id(user.id).profile_path %>" >
+      <img src="<%= get_user_by_user_id(user.id).profile_pic(:medium) %>" class="medium_user_image" /></a>
+    <div class="search_result_users">
+      <span><a href="<%= get_user_by_user_id(user.id).profile_path %>" class="user_name" id="other_username" style="width: auto;clear: none;display: inline;" ><%= user.username %></a>&nbsp;&nbsp;<span class="normal_text" id="search_result"><%= (user.user_detail.about_me) if user.user_detail %></span></span>
+    </div>
+  </div>
+<% end %>

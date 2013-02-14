@@ -1,0 +1,59 @@
+<%# discussions.each do |discussion|%>
+<!-- Photo starts here -->
+<% host_url = "http://"+request.host_with_port %>
+
+<div class="<%= box_border_shadow(discussion)%> picture_<%= discussion.id %> masonry_block" >
+  <div class="discussion_text_cotainer float_l">
+    <% if discussion.site_title.present? %>
+      <a href="javascript:void(0);" class="discussion_title" onclick="show_discussion(<%= discussion.id %>);"><%= discussion.site_title %></a>
+    <% end %>
+    
+    <%  if discussion.discussion_type == "Picture" %>
+      <% pic = discussion.images.present? ? discussion.images[0] : nil%>
+      <a href="javascript:void(0);" class="float_l" onclick="show_discussion(<%= discussion.id %>);" style="padding-left: 0;padding-bottom: 10px">
+        <img src="<%= pic.photo(:medium) %>" class="photo_full_pic" style="width:165px;height:<%= pic.photo.height(:medium) %>px;" /></a>
+      <a href="javascript:void(0);" class="discus_web_url_link" onclick="show_discussion(<%= discussion.id %>);"><%= truncate(discussion.discussion,:length=>200) %></a>
+    <% elsif discussion.discussion_type!="URL" %>
+      <a href="javascript:void(0);" class="discus_web_url_link" onclick="show_discussion(<%= discussion.id %>);"><%= truncate(discussion.discussion,:length=>200) %></a>
+    <% end %>
+    <span class="comment_count">
+      <span>
+        by <a href="<%= discussion.user_discussions[0].user.profile_path %>" class="action_link" style="text-decoration:none;font-size: 10px;" title="<%= discussion.user_discussions[0].user.username %>"><%= discussion.user_discussions[0].user.username %></a>
+        at <%= discussion.created_at %></span></span>
+    <%  if discussion.discussion_type == "Document" %>
+    <div class="disc_attachments_div clear_both" align="left">
+      <% if !discussion.discussion_attachments.blank? %>
+        <% discussion.discussion_attachments.each do |att| %>
+          <a href="<%= host_url+""  %><%= att.file %>" class="<%= att.file_content_type=="application/pdf" ? "pdf_file": "word_file" %> disc_attachment_link clear_both" title="<%= att.file_file_name %>"><%= truncate(att.file_file_name, :length => 10) %></a>
+        <% end %>
+      <% end %>
+      <% if !discussion.images.blank? %>
+        <% discussion.images.each do |att| %>
+          <a href="<%= host_url+""  %><%= att.photo %>" class="pdf_file picture_file disc_attachment_link clear_both" title="<%= att.photo_file_name %>"><%= truncate(att.photo_file_name, :length => 10) %></a>
+        <% end %>
+      <% end %>
+    </div>
+    <% end %>
+    <div class="post_comment_div">
+      <span class="clear_both delete_discussion_div">
+        <% if discussion.is_deletable?(@login_user) %>
+          <a href="javascript:void(0);" class="discussion_action_link" onclick="delete_discussion(<%= discussion.id %>,jQuery(this))">Delete</a>
+        <% end %>
+      </span>
+    </div>
+      <br class="clear_both"/>
+    <span class="gold_star_display discussion_count_<%= discussion.id%>" ><span style="font-weight:bold;font-size: 11px"><%= discussion.average_ratings %></span></span>
+    <span class="comment_circle discussion_comm_count_<%= discussion.id %>" ><%=  discussion.all_comments_count(discussion.id) %></span>
+  </div>
+
+</div>
+<!-- Photo ends here -->
+
+<%# end %>
+
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    set_effects();
+  });
+
+</script>

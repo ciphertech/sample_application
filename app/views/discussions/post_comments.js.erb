@@ -1,0 +1,19 @@
+<% if @is_saved %>
+
+var comments_html = ("<%= escape_javascript(render :partial => "outer_comment", :locals=>{:comment=>@comments,:is_creating=>true}).html_safe %>");
+var obj = curr_object;
+curr_object.closest(".urls_div").find(".comments_div").prepend(comments_html);
+obj.parent().find(".post_comment_text_area").val("");
+obj.parent().parent().hide();
+obj.parent().parent().prev().show();
+
+jQuery("input:text,input:file, textarea",obj.closest('form')).val("");
+var main_parent = obj.parent().parent().parent().parent().parent().children(".comments_div");
+
+apply_ratings();
+<% count = Comment.count(:all, :conditions=>["discussion_id=?",@discussion.id]) %>
+jQuery(".discussion_comm_count_<%= @discussion.id %>").html("<%= count  %>");
+<% end %>
+display_flash_message("<%= @notice %>");
+is_sending = false;
+set_comment_form();

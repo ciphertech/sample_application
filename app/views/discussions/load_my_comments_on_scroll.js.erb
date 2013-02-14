@@ -1,0 +1,15 @@
+
+<%  if @discussions.blank? %>
+  jQuery("#my_comment_loader").hide();
+  m_c_finish();
+<% else %>
+  var $output_html = jQuery("<%= escape_javascript(render :partial => "url_blocks_multuple", :locals=>{:discussions=>@discussions}).html_safe %>");
+  jQuery(".my_comments_block .d_inner_div").append($output_html);
+
+  apply_ratings();
+
+  jQuery("#my_discussion_comments .current_users_comment").each(function(){
+  is_first_node = true;
+  expand_user_comment_tree(jQuery(this));
+  });
+<% end %>

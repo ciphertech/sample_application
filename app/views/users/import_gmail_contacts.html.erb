@@ -1,0 +1,134 @@
+<!--
+<div align="center" style="width: 100%;display: block; float: left;">
+  <% if @message %>
+    <span class="error">
+      <%= @message %>
+    </span>
+  <% elsif @contacts  %>
+    <div style="border: 1px solid #EAE9E9;display: block;width: 350px;">
+      <%= form_tag "/users/add_email_to_crowd" , :remote=>true do |f| %>
+        <div class="gmail_cont_table_div">
+          <table>
+            <% @contacts.each do |cont| %>
+              <tr>
+                <td>
+                  <input type="checkbox" name="user[email][]" class="conatcts_chk" value="<%= cont[1] %>"/>
+                </td>
+                <td>
+                  <span class="mail_ids" title="<%= cont[0] %>">
+                    <%= truncate(cont[1], :length=>25) %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+
+          </table>
+        </div>
+        <div class=" clear_both" style="padding: 10px">
+          <input type="hidden" name="group[id]" value="<%= params[:id] %>" />
+          <input type="submit" value="Add"/>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  <div>
+    <%= form_tag "/users/import_gmail_contacts/#{@group.id}" do |f| %>
+      <table class="gmail_sign_in_table">
+        <tr>
+          <td colspan="2" align="center">
+            <span class="profile_detail_field_name">
+              Enter your gmail username and password.
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="profile_detail_field_name">
+              Username:
+            </span>
+          </td>
+          <td>
+            <input type="text" name="email" />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="profile_detail_field_name">
+              Password:
+            </span>
+          </td>
+          <td>
+            <input type="password" name="password" />
+          </td>
+        </tr>
+        <tr>
+          <td>
+          </td>
+          <td>
+            <input type="submit" value="Submit" />
+          </td>
+        </tr>
+      </table>
+    <% end if @contacts.nil? %>
+  </div>
+
+</div>
+
+-->
+<div class="grey_overlay" id="import_gmail_cont_popup" style="display: block;">
+  <div class="pop_up" style="height: 215px;">
+    <div class="popup_inner_div">
+      <a href="javascript:void(0);" onclick="jQuery('#import_gmail_cont_popup').remove();" class="popup_close_btn">&nbsp;</a>
+      <div class="popup_content">
+        <span class="popup_heading">Import Gmail Contact</span>
+
+          <div id="gmail_cont_list" style="border: 1px solid #EAE9E9;width: 350px; display: none;">
+
+          </div>
+          <div id="gmail_cont_form">
+           <%= form_tag "/users/import_gmail_contacts/#{@group.id}" , :remote=>true do |f| %>
+              <table class="gmail_sign_in_table">
+                <tr>
+                  <td colspan="2" align="center">
+                    <span class="profile_detail_field_name">
+                      Enter your gmail username and password.
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <span class="profile_detail_field_name">
+                      Username:
+                    </span>
+                  </td>
+                  <td>
+                    <input type="text" name="email" class="g_email" />
+                    <span class="error g_email_error"></span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <span class="profile_detail_field_name">
+                      Password:
+                    </span>
+                  </td>
+                  <td>
+                    <input type="password" name="password" class="g_pass" />
+                    <span class="error g_pass_error"></span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                  </td>
+                  <td>
+                    <input type="submit" value="Submit" onclick="return check_gmail_auth_form(jQuery(this).closest('form'));" />
+                  </td>
+                </tr>
+              </table>
+            <% end %>
+          </div>
+
+      </div>
+    </div>
+  </div>
+</div>

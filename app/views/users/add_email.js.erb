@@ -1,0 +1,16 @@
+jQuery("#add_email_popup").fadeOut();
+<% if @added && @user.present? %>
+  var output_html = ("<%= escape_javascript(render :partial => "group_user", :locals=>{:g_u=>@disc_group_user}).html_safe %>");
+  jQuery("#group_<%= @group.id %> .group_users_container").append(output_html);
+  <% if @following %>
+    var $left_html = "<a href='/users/profile/<%= @user.id %>' class='user_pic_<%= @user.id %>'><img src='<%= @user.profile_pic(:small) %>' class='small_user_image' title='<%= @user.username%>' alt='<%= @user.username%>' /></a>"
+    if(jQuery("#user_left_panel_following").children("a").length < 15){
+      jQuery("#user_left_panel_following").append($left_html);
+    }
+  <% end %>
+<% elsif @added %>
+  var $output_html = ("<%= escape_javascript(render :partial => "non_site_crowd_user", :locals=>{:g_u=>@non_site_user}).html_safe %>");
+  jQuery("#group_<%= @group.id %> .group_users_container").append($output_html);
+<% end  %>
+display_flash_message("<%= escape_javascript(@notice).html_safe %>");
+

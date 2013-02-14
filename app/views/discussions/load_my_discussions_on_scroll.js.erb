@@ -1,0 +1,10 @@
+
+<%  if @discussions.blank? %>
+  jQuery("#my_discussion_loader").hide();
+  m_d_finish();
+<% else %>
+  var $output_html = jQuery("<%= escape_javascript(render :partial => "discussions_multiple", :locals=>{:discussions=>@discussions}).html_safe %>");
+  jQuery(".my_discussions_block .d_inner_div").append($output_html);
+
+  apply_ratings();
+<% end %>

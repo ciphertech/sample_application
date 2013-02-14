@@ -1,0 +1,224 @@
+<%= javascript_include_tag 'tab' %>
+<%= javascript_include_tag 'discussion' %>
+
+<script type="text/javascript" src="/javascripts/jquery.form.js"></script>
+<style>
+  .discus_web_url_link
+  {
+    max-width: 610px !important;
+    word-wrap: break-word;
+  }
+  .my_discussion_comment_link
+  {
+    color: #64B0CC;
+    float: right;
+    font-size: 12px;
+    left: 10px;
+    position: absolute;
+    text-align: right;
+    text-decoration: none;
+    top: 0;
+    width: 655px;
+  }
+  label
+  {
+    width: auto !important;
+  }
+</style>
+<div class="left_panel" align="center">
+  <%= render :partial => "user_left_panel" %>
+</div>
+<div class="main_panel">
+  <div class="profile_tabs_container">
+    <div class="profile_detail_div">
+      <%= render :partial=>"user_account" %>
+    </div>
+    <div class="tabs_div">
+      <%= render :partial=>"tab_section" %>
+    </div>
+  </div>
+
+  <!-- Discussion section starts -->
+  <% unless @login_user.is_admin? and @other_user==@login_user %>
+    <div class="profile_discussion_block" id="discuss_a_web_page_div">
+      <div class="discussion_header" align="left">
+        <span class="blue_header padding_left_ten" id="my_discussion_header"><%= @is_current_user ? "My" : truncate(@other_user.username, :length=>20)+"'s" %> Discussions</span>
+        <% if @other_user and @other_user==current_user%>
+          <div class="profile_post_url_div" align="right">
+            <div class="grp_disc_form_wrpr">
+              <%= form_for :discussion, :url=>{:controller=>:discussions, :action => 'create_discussion'}, :html => {:multipart => true, :id=>"discussion_form"} do |f|  %>
+                <span id="disc_type" class="clear_both  hidden_element discussion_frm_heading" style="float:left;">Title:
+                  <span class="error clear_both"></span>
+                  <%= text_field 'discussion', 'title', {:class=>"discussion_title", :style=>"width: 400px;"} %>
+                  <span class="error title_error"></span>
+                </span>
+                <span class="error clear_both"></span>
+                <span id="disc_type_text" class="clear_both discussion_frm_heading">URL:</span>
+                <%= text_area 'discussion', 'discussion', {:class=>"discussion_discussion flaot_l", :style=>"width: 400px;height: 40px; margin-left: 10px;"} %>
+                <span id="urlError" class="error url_error"></span>
+                <span id="disc_type_file" class="clear_both hidden_element discussion_frm_heading ">
+                  <span class="picture_options_span hidden_element">
+                    <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#upload_photo_popup').show();pic_form=jQuery(this).closest('form');">Upload Picture</a>
+                    <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#add_photo_popup').show();pic_form=jQuery(this).closest('form');">Find Picture</a>
+                  </span>
+                  <span class="upld_pic_span clear_both" style="margin-left: 10px;">
+                    File: <%= file_field 'discussions', 'attachment', {:class => "discussion_attachment_file"} %>
+                    <input type="hidden" name="is_uploaded" id="is_uploaded" value="true"/>
+                    <input type="hidden" name="photo_url" value=""/>
+                    <input type="hidden" name="added_from" value=""/>
+                  </span>
+                  <span class="error file_error"></span>
+                </span>
+                <span class="error clear_both"></span>
+                <%= hidden_field_tag 'current_page', 'profile' %>
+
+                <span class="grp_disc_radios clear_both" style="padding-top: 0px;">
+                  <div class="float_l">
+                    <span class="clear_both discussion_frm_heading">Discussion Type</span>
+                    <div class="discussion_type_div">
+                      <select id="discussion_type" name="discussion[discussion_type]" class="float_l" style="width: 150px">
+                        <option value="URL">URL</option>
+                        <option value="Comment/Question">Comment/Question</option>
+                        <option value="Document">Document</option>
+                        <option value="Picture">Picture</option>
+                      </select>
+                    </div>
+                    <script type="text/javascript">
+                      //jQuery("#discussion_type").selectmenu();
+                    </script>
+                  </div>
+                  <div class="float_l" style="padding-left: 20px;">
+                    <span class="clear_both discussion_frm_heading" style="margin-bottom: 4px;">Discuss with</span>
+                    <input type="radio" checked id="discuss_with_all_user" name="discussion[share_type]" value="public" onclick="jQuery('.d_group_box').hide();" /><label for="share_type">All User</label>
+                    <input type="radio" id="discuss_with_group" name="discussion[share_type]" value="groups" onclick="jQuery('.d_group_box').show();" /><label for="share_type">Groups/Crowds</label>
+                  </div>
+
+                  <div class="d_group_box clear_both hidden_element" align="left">
+                    <strong class="clear_both discussion_frm_heading">Select groups</strong>
+                    <%= render :partial => 'discussions/load_groups' %>
+                  </div>
+
+                  <div class="d_group_box clear_both hidden_element" align="left">
+                    <strong class="clear_both discussion_frm_heading">Select crowds</strong>
+                    <%= render :partial => 'discussions/load_crowds' %>
+                  </div>
+                  <div class="padding_top_six dis_attachment_container clear_both" align="left"></div>
+                </span>
+                <input type="submit" class="blue_btn float_l clear_both" value="Discuss" onclick="return check_url(jQuery(this))"/>
+              <% end %>
+              <div class="hidden_element" id="attchment_content">
+                <div class="attachment">
+                  <a class="remove_attachment" href="javascript:void(0);"><img title="Remove" src="/images/cross-icon.png" width="10px" height="10px"/></a>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>Description:</td>
+                      <td><input type="text" name="attachment_desc[]" style="height: 15px;" class="discussion_attachment_desc"/>
+                        <span class="error clear_both"></span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>File:</td>
+                      <td><input type="file" name="discussion_attachments[]" class="discussion_attachment_file"/>
+                        <span class="error clear_both"></span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div id="my_discussion_comments">
+        <%= render :partial => "discussions/my_discussions", :locals=>{:discussions=>@discussions,:direct=>true}, :layout => false %>
+      </div>
+    </div>
+  <% end %>
+  <!-- Discussion section ends -->
+  <% if !@notifications.blank? %>
+    <%= render :partial => "group_notification_to_user" %>
+  <% end %>
+</div>
+<%= render :partial=>"discussion_groups/upload_photo" %>
+<%= render :partial=>"discussion_groups/add_photo" %>
+<%= render :partial=>"discussion_groups/remote_photos" %>
+<%= render "discussion_groups/fileupload/js_include_local" %>
+
+<script type="text/javascript">
+<% @other_user.nil? ? @other_user=@login_user :@other_user %>
+  function load_my_comments()
+  {
+    jQuery.get('/load_my_comments/<%= @other_user.id  %> ', function(data) {
+      jQuery("#my_discussion_comments").html(data);
+      jQuery("#my_discussion_header").html("<%= @is_current_user ? "My" : truncate(@other_user.username, :length=>20)+"'s" %> Comments");
+      jQuery(".my_discussion_comment_link").html("<%= @is_current_user ? "My" : truncate(@other_user.username, :length=>20)+"'s" %> Discussions");
+      apply_scroll_effect_to("my_comments_block")
+    });
+  }
+  function load_my_discussions()
+  {
+    jQuery.get('/load_my_discussions/<%= @other_user.id  %>', function(data) {
+      jQuery("#my_discussion_comments").html(data);
+      jQuery("#my_discussion_header").html("<%= @is_current_user ? "My" : truncate(@other_user.username, :length=>20)+"'s" %> Discussions");
+      jQuery(".my_discussion_comment_link").html("<%= @is_current_user ? "My" : truncate(@other_user.username, :length=>20)+"'s" %> Comments");
+    });
+  }
+  jQuery(document).ready(function(){
+    jQuery(".my_discussion_comment_link").html("<%= @is_current_user ? "My" : truncate(@other_user.username, :length=>20)+"'s" %> Comments");
+    apply_scroll_effects();
+    jQuery(".add_attachment_link").click(function(){
+      var $attchment = jQuery("#attchment_content .attachment").clone();
+      jQuery(".dis_attachment_container").append($attchment);
+    });
+
+    jQuery(".remove_attachment").live("click",function(){
+      jQuery(this).closest(".attachment").remove();
+    });
+    jQuery('#discussion_form').ajaxForm(function() {
+      //nothing
+    });
+    jQuery("#discussion_type").selectmenu();
+<% if @other_user.id == @login_user.id %>
+      set_discussion_form(jQuery('#discussion_type'));
+<% end %>
+    
+  });
+
+</script>
+
+
+
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    set_effects();
+
+    /*  jQuery(".add_attachment_link").click(function(){
+      var $attchment = jQuery("#attchment_content .attachment").clone();
+      $attchment.find(".error").html("");
+      jQuery(".dis_attachment_container").append($attchment);
+    });*/
+
+    /*jQuery(".remove_attachment").live("click",function(){
+      jQuery(this).closest(".attachment").remove();
+    });*/
+    
+    jQuery('#discussion_form').ajaxForm(function() {
+      //nothing
+    });
+    
+    if(jQuery("#discuss_with_group").is(":checked"))
+    {
+      jQuery('.d_group_box').show();
+    }
+
+    jQuery('#discussion_type').change(function(){
+      jQuery(".error").html("");
+      set_discussion_form(jQuery(this));
+
+    });
+    
+  });
+  
+  
+</script>
+

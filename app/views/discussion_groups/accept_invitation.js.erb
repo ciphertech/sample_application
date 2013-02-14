@@ -1,0 +1,12 @@
+<% if @accept %>
+  var $result = jQuery("<%= escape_javascript(render :partial => "accept_group_invitation", :locals=>{:group=>@accept}).html_safe %>");
+  jQuery('body').append($result);
+  jQuery('#accept_invitation_to_group_user').show();
+  jQuery("#group_invition_<%= @accept.id %>").fadeOut().remove();
+  <% if  !DiscussionGroupUser.where("discussion_group_id=? AND is_member=?", @accept.id, false).present? %>
+    jQuery('#search_result_for_group_error').html('There are no invitations available for you.');
+  <% end %>
+<% else %>
+  display_flash_message("<%= @notice %>");
+<% end %>
+

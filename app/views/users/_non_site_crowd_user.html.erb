@@ -1,0 +1,7 @@
+<div class="crowd_user_non_site_<%= g_u.id %> follower_following_img_block" style="height: 52px;">
+  <span class="foll_action_span">
+    <a id="share_with_group_link" class="discussion_action_link foll_group_manage" href="javascript:void(0);" onclick="non_site_add_to_group(<%= g_u.id %>);" ><img src="/images/group.png" width="13" height="10" title="Change Crowd"/></a>
+    <%= link_to image_tag("/images/cross-icon.png",:style=>"width:10px;height:10px;"), {:controller=>'users', :action=>'remove_non_site_from_crowd', :id=>g_u.id}, :id=>"remove_user", :class=>"discussion_action_link delete_follower",:confirm=>"Are you sure you want to remove?", :remote => true, :title=>"Remove" %>
+  </span>
+  <img src="/images/profile_image.jpg" class="medium_user_image" title="<%= g_u.email %>" />
+</div>

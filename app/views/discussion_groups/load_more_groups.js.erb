@@ -1,0 +1,6 @@
+var $output_html = jQuery("<%= escape_javascript(render :partial => "groups_multiple", :locals=>{:discussion_groups=>@discussion_groups}).html_safe %>");
+jQuery(".d_grp_conatiner").append($output_html);
+jQuery(".group_loader_div").hide();
+<%  if @discussion_groups.blank? %>
+ finish= false;
+<% end %>

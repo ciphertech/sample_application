@@ -1,0 +1,99 @@
+<script type="text/javascript" src="/javascripts/discussion_groups.js"></script>
+<span class="blue_header" id="search_public_groups">
+  Search Result for '<%= @search_text %>'
+  <span class="group_search_form_container">
+    <%= form_for :discussion_group, :url=>{:controller=>:discussion_groups, :action => 'search_groups'} do |f|  %>
+    <input type="text" name="search_text" value="Search public groups" class="group_search_text " id="search_public_groups" />
+      <span class="text_place_holder hidden_element">Search public groups</span>
+      <!--<a class="group_search_btn" href="javascript:void(0);">Search</a>-->
+      <input type="submit" class="blue_btn" value="Search" onclick="return search_groups()"/>
+    <% end %>
+  </span>
+</span>
+<div class="d_grp_conatiner">
+  <% if !@discussion_groups.blank? %>
+    <% @discussion_groups.each do |d_g| %>
+      <%= render :partial => "search_result_grp_block", :locals=>{:group=>d_g} %>
+    <% end %>
+    <div class="group_loader_div" style="display:<%= @discussion_groups.blank? ? 'none' : 'block' %>">
+      <img title="Loading" alt="Loading" src="/images/ajax-loader.gif"/>
+    </div>
+  <% end %>
+</div>
+<span class="search_result_for_group_error"><% if @discussion_groups.blank? %>No result found!<% end %></span>
+
+
+<script type="text/javascript">
+  (function($) {
+
+    $("input.group_search_text").focus(function(){
+      var $this = $(this);
+      var plce_holder = $(this).next(".text_place_holder").html();
+      if($this.val().length!=0 && $this.val()==plce_holder)
+      {
+        $this.val("");
+      }
+    });
+    $("input.group_search_text").blur(function(){
+      var $this = $(this);
+      var plce_holder = $(this).next(".text_place_holder").html();
+      if($this.val().length==0)
+      {
+        $this.val(plce_holder);
+      }
+
+    });
+
+    $(".albums").hover(function(){
+      $(this).find(".album_actions").stop().show().animate({'height':'15px'},"fast");
+    },function(){
+      $(this).find(".album_actions").stop().animate({'height':'0px'},"fast",function(){$(this).hide()});
+    });
+
+  })(jQuery);
+</script>
+<script type="text/javascript">
+  (function() {
+    var page = 1,
+    loading = false,
+    finish = false;
+
+    function nearBottomOfPage() {
+      //console.debug(($(window).scrollTop() > $(document).height() - $(window).height() - 100) && ($(document).height() - $(window).height() - 100)>0);
+      return ($(window).scrollTop() > $(document).height() - $(window).height() - 100) && ($(document).height() - $(window).height() - 100)>0;
+    }
+
+    function finish() {
+      finish = true;
+    }
+
+
+
+    $(window).scroll(function(){
+      if (loading) {
+        return;
+      }
+
+      if(nearBottomOfPage() && !finish) {
+        loading=true;
+        jQuery(".group_loader_div").show();
+        page++;
+        $.ajax({
+          url: '/load_more_groups/<%= escape_javascript(@search_text=="" ? " " : @search_text).html_safe%>?page=' + page,
+          type: 'get',
+          dataType: 'script',
+          success: function() {
+            loading=false;
+            jQuery(".group_loader_div").hide();
+          }
+        });
+      }
+    });
+
+    if(!nearBottomOfPage())
+    {
+      jQuery(".group_loader_div").hide();
+    }
+
+  }());
+</script>

@@ -1,0 +1,4 @@
+jQuery("#disc_group_block_<%= @disc_group.id %>").fadeOut().remove();
+<% if  @login_user.all_public_private_groups.blank? %>
+  jQuery('#no_disc_group_error').html('There are no groups available for you.').show();
+<% end %>

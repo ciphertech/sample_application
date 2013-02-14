@@ -1,0 +1,280 @@
+<script type="text/javascript" src="/javascripts/jquery.masonry.js"></script>
+<script type="text/javascript" src="/javascripts/modernizr-transitions.js"></script>
+<script type="text/javascript" src="/javascripts/pictures.js"></script>
+
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    /*for css*/
+    doc_ht = jQuery(document).height();
+    jQuery(".background_wrapper").css('height',doc_ht+'px');
+    if(jQuery.browser.opera)
+    {
+      jQuery(".blue_btn").css('padding-bottom','2px');
+    }
+    /* UI Functionality */
+		
+    set_effects();
+    apply_scroll_effects();
+
+  });
+</script>
+<script type="text/javascript" src="/javascripts/jquery.ui.selectmenu.js"></script>
+<link type="text/css" rel="stylesheet" media="screen" href="/stylesheets/jquery.ui.selectmenu.css"></link>
+<style>
+  .discus_web_url_link
+  {
+    color:#08384f;
+    font-size:12px;
+    text-align:left;
+    padding-left:0px;
+    float:left;
+    text-decoration:none;
+    max-width: 162px !important;
+    word-wrap: break-word;
+  }
+  body {font-size: 11px ; font-family:"Verdana",sans-serif; }
+  fieldset { border:0; }
+  label,select,.ui-select-menu { float: left; margin-right: 10px; }
+  select { width: 120px; }
+  .wrap ul.ui-selectmenu-menu-popup li a { font-weight: bold; }
+</style>
+<% unless @login_user.is_admin? %>
+  <div class="discussion_block float_l" id="discuss_a_web_page_div">
+    <%= render :partial => "discuss_a_web_page", :locals=>{:lastest_discussion=>@lastest_discussion}, :layout => false %>
+  </div>
+<% end %>
+<div>
+  <span class="blue_header"><span id='page_head_text'>All Discussions</span>
+    <span style="float:right;"><%= link_to "Most Popular", "javascript:void(0)",  :id => 'most_popular', :class=>'group_add_user_link' %></span>
+  </span>
+  <div class="discussion_sorting_div">
+    <select id="discussion_sorting" name="discussion[sorting]" class="float_l discussion_sort_selects" style="width: 140px;">
+      <option value="30day">Last 30 day</option>
+      <option value="30min">Last 30 min</option>
+      <option value="day">Last day</option>
+      <option value="week">Last week</option>
+      <option value="year">Last year</option>
+    </select>
+  </div>
+  <script type="text/javascript">
+    jQuery("#discussion_sorting").selectmenu();
+  </script>
+
+  <span class="all_discussion_sorting_options" style="width:305px;">
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <a class="discussion_action_link" href="javascript:void(0);" onclick="set_order('comments')">Sort by Most Comments</a>
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <a class="discussion_action_link" href="javascript:void(0);" onclick="set_order('ratings')">Sort by Most Rated</a>
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <a class="discussion_action_link" href="javascript:void(0);" onclick="set_order('recent')">Sort by Recent</a>
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+  </span>
+  <% unless @login_user.is_admin? %>
+    <div class="group_sorting_div" style="width: 325px">
+      <select id="group_discussion_sorting_by_group" name="group[sorting]" class="float_l discussion_sort_selects" style="width: 140px;">
+        <option value="0">Select a Group</option>
+        <% if !@groups.blank? %>
+          <% @groups.each do |group| %>
+            <option value="<%= group.id %>"><%= group.name %></option>
+          <% end %>
+        <% end %>
+      </select>
+      <span style="width: 10px;float: left;display: block;">&nbsp;</span>
+      <select id="sort_by_crowd_select" name="crowd[sorting]" class="float_l discussion_sort_selects" style="width: 140px;margin-left: 10px;">
+        <option value="0">Select a Crowd</option>
+        <% if !@crowds.blank? %>
+          <% @crowds.each do |group| %>
+            <option value="<%= group.id %>"><%= group.name %></option>
+          <% end %>
+        <% end %>
+      </select>
+    </div>
+    <span style="margin: 10px 0 0 10px;float:left;clear: both">
+      <%= link_to "Updates From Followed Members", {:controller => 'discussions', :action => 'updates_from_following_follower'}, :class=>"discussion_action_link follower_btn" %>
+    </span>
+
+    <script type="text/javascript">
+      jQuery("#group_discussion_sorting_by_group,#sort_by_crowd_select").selectmenu();
+    </script>
+  <% end %>
+
+  <%= hidden_field_tag 'order_by', 'comments' %>
+  <%= render "discussion_groups/fileupload/js_include_local" %>
+
+  <div id="result" class="float_l" style="width:100%;">
+    <%  @most_pop_discussions.each do |discussion| %>
+      <%= render :partial => "discussion_groups/simple_discussion_groups_block", :locals=>{:discussion => discussion} %>
+    <% end %>
+  </div>
+  <div class="loader_div" id="all_discussions_loader">
+    <img title="Loading" alt="Loading" src="/images/ajax-loader.gif"/>
+  </div>
+</div>
+
+<!-- main url end here -->
+
+<script type="text/javascript">
+  var page = 1;
+  loading = false;
+  finished = false;
+
+  function set_order(order){
+    var group_id = jQuery("#group_discussion_sorting_by_group").val();
+    jQuery("#order_by").val(order);
+    var current_order= jQuery("#order_by").val();
+    var crowd_id = jQuery("#sort_by_crowd_select").val();
+    var time_span = jQuery("#discussion_sorting").val();
+    jQuery.get("load_discussion_as_per_time/"+time_span+"?order_by="+current_order+"&group_id="+group_id+"&crowd_id="+crowd_id,function(data){
+      page = 1;
+      finished = false;
+      loading = false;
+      jQuery("#result").html(data);
+      jQuery("#result").masonry( "reload" );
+    });
+  }
+
+  $(document).ready(function(){
+    jQuery('#most_popular').live("click" , function() {
+      var val = jQuery('#most_popular').text() == 'Most Popular' ? '30min'  : '30day'
+      jQuery("#discussion_sorting").val(val);
+      jQuery('#most_popular').text(jQuery('#most_popular').text() == 'Most Popular' ? 'View All' : 'Most Popular');
+      jQuery("#discussion_sorting").selectmenu();
+      show_most_popular_view_all(val)
+    });
+  });
+
+  function show_most_popular_view_all(val){
+    val=='30min' ? jQuery(".discussion_sorting_div").hide() : jQuery(".discussion_sorting_div").show()
+    val=='30min' ? jQuery(".group_sorting_div").hide() : jQuery(".group_sorting_div").show()
+    val=='30min' ? jQuery(".all_discussion_sorting_options").hide() : jQuery(".all_discussion_sorting_options").show()
+    jQuery("#page_head_text").html(val=='30min' ? 'Popular Discussions' : 'All Discussions')
+    var current_value= val;
+    var current_order= 'comments';
+    jQuery.get("load_discussion_as_per_time/"+current_value+"?order_by="+current_order,function(data){
+      page = 1;
+      finished = false;
+      jQuery("#result").html(data);
+      jQuery("#result").masonry( "reload" );
+    });
+  }
+
+  var added_from_site = false;
+  applyPhotoEffects();
+  jQuery(document).ready(function(){
+
+    jQuery("#result").masonry( "reload" );
+
+    
+  });
+  function applyPhotoEffects()
+  {
+    jQuery("#result").masonry({
+      itemSelector: '.masonry_block'
+    });
+  }
+ 
+
+  jQuery(document).ready(function(){
+    
+    jQuery(".discussion_sort_selects").change(function(){
+      var group_id = jQuery("#group_discussion_sorting_by_group").val();
+      var current_order= jQuery("#order_by").val();
+      var crowd_id = jQuery("#sort_by_crowd_select").val();
+      var time_span = jQuery("#discussion_sorting").val();
+      
+      jQuery.get("load_discussion_as_per_time/"+time_span+"?order_by="+current_order+"&group_id="+group_id+"&crowd_id="+crowd_id,function(data){
+        page = 1;
+        finished = false;
+        loading = false;
+        jQuery("#result").html(data);
+        jQuery("#result").masonry( "reload" );
+      });
+    });
+
+    
+    /*jQuery("#group_discussion_sorting_by_group").change(function(){
+      var current_value = jQuery("#group_discussion_sorting_by_group").val();
+
+      jQuery.get("load_discussion_as_per_time/"+jQuery("#discussion_sorting").val()+"?order_by="+jQuery("#order_by").val()+"&group_id="+jQuery('#group_discussion_sorting_by_group').val(),function(data){
+        page = 1;
+        finished = false;
+        loading = false;
+        jQuery("#result").html(data);
+        jQuery("#result").masonry( "reload" );
+      });
+    });
+
+    jQuery("#sort_by_crowd_select").change(function(){
+      var current_value = jQuery("#group_discussion_sorting_by_group").val();
+
+      jQuery.get("load_discussion_as_per_time/"+jQuery("#discussion_sorting").val()+"?order_by="+jQuery("#order_by").val()+"&group_id="+jQuery('#group_discussion_sorting_by_group').val(),function(data){
+        page = 1;
+        finished = false;
+        loading = false;
+        jQuery("#result").html(data);
+        jQuery("#result").masonry( "reload" );
+      });
+    });
+     */
+
+  });
+</script>
+
+<script type="text/javascript">
+  loading=false;
+  jQuery("#all_discussions_loader").show();
+  var current_value= jQuery("#discussion_sorting").val();
+  var current_order= jQuery("#order_by").val();
+  (function() {
+
+    function nearBottomOfPage() {
+      return ($(window).scrollTop() > $(document).height() - $(window).height() - 100) && ($(document).height() - $(window).height() - 100)>0;
+    }
+
+    function finish() {
+      finish = true;
+    }
+
+    $(window).scroll(function(){
+      if (loading) {
+        return;
+      }
+      
+      if(nearBottomOfPage() && !finished) {
+        page++;
+        var group_id = jQuery("#group_discussion_sorting_by_group").val();
+        var current_order= jQuery("#order_by").val();
+        var crowd_id = jQuery("#sort_by_crowd_select").val();
+        var time_span = jQuery("#discussion_sorting").val();
+        loading=true;
+        jQuery.get("load_discussion_as_per_time/"+time_span+"?order_by="+current_order+"&group_id="+group_id+"&crowd_id="+crowd_id+"&page="+page,function(data){
+          loading = false;
+          if(data.length>0)
+          {
+            jQuery("#result").append($(data)).masonry( 'appended', $(data), true );
+            jQuery("#result").masonry( "reload" );
+          
+          }
+          else
+          {
+            finished = true;
+          }
+          jQuery("#all_discussions_loader").hide();
+        });
+        jQuery("#all_discussions_loader").show();        
+      }
+    });
+
+    if(!nearBottomOfPage())
+    {
+      jQuery("#all_discussions_loader").hide();
+    }
+
+  }());
+<% if params[:id].present? && Discussion.find_by_id(params[:id]) %>
+    show_discussion(<%= params[:id] %>);
+<% end %>
+</script>
+
+
+

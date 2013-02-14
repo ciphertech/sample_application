@@ -1,0 +1,3 @@
+
+var comments_html = ("<%= escape_javascript(render :partial => "photo_list", :locals=>{:discussions=>@discussions}).html_safe %>");
+jQuery("#upload_div").replaceWith(comments_html);

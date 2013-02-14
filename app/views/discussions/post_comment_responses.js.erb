@@ -1,0 +1,41 @@
+<% if @is_saved %>
+  var comments_html = ("<%= escape_javascript(render :partial => "inner_comment", :locals=>{:response=>@comments,:is_creating=>true}).html_safe %>");
+  var obj = curr_object;
+  //curr_object.parent().parent().parent().parent().parent().find(".comments_div").prepend(comments_html);
+  obj.closest(".comment_<%= @comments.parent_id %>").find(".comments_div:first").prepend(comments_html);
+  obj.parent().find(".post_comment_text_area").val("");
+
+  obj.closest(".comment_<%= @comments.parent_id %>").find(".comments_div").css("padding-left","10px").show();
+
+  obj.closest(".comment_<%= @comments.parent_id %>").find("a.toggle_comment:first").removeClass("expand_btn").addClass("collapse_btn");
+
+  var main_parent = obj.parent().parent().parent().parent().parent().parent().children(".comments_div");
+  obj.parent().parent().hide();
+  obj.closest(".comment_form_div").prev().show();
+
+  var current_object = null;
+
+  main_parent.children(":first-child").find('.rating_class').raty({
+  click: function(score, evt) {
+  current_object = jQuery(this);
+  $(this).parent().submit();
+  }
+  });
+
+
+  main_parent.children(":first-child").find(".rating_container").each(function(v,i){
+  var value = jQuery(this).children("span").html();
+  jQuery(this).children('.rating_class_fixed').raty({
+  readOnly:	true,
+  start:		value
+  });
+  });
+  <% count = Comment.count(:all, :conditions=>["discussion_id=?",@discussion.id]) %>
+  jQuery(".discussion_comm_count_<%= @discussion.id %>").html("<%= count  %>");
+  jQuery(".discussion_comm_count_<%= @discussion.id %>").attr('title', "<%=  count %>");
+  apply_ratings()
+<% end %>
+
+display_flash_message("<%= @notice %>");
+is_sending = false;
+set_comment_form();

@@ -1,0 +1,726 @@
+class DiscussionsController < ApplicationController
+  before_filter :login_required
+  include  DiscussionsHelper
+  before_filter :other_user_check, :only => [:load_my_comments, :load_my_discussions]
+
+  #
+  #Created on: 07/01/2012
+  #Purpose:
+  #++ This method is used for display discussion
+  def index
+    #if @login_user.is_admin?
+    redirect_to :action => "all_discussion"
+    #else
+    @other_user = @login_user
+    @groups = @login_user.all_public_private_groups
+    @latest_user_discussion = @login_user.user_discussions.order('created_at desc').limit('1')
+    @lastest_discussion = @latest_user_discussion[0].discussion if !@latest_user_discussion.blank?
+    #@discussions = @login_user.discussions.order('created_at desc')
+    @discussions = @login_user.discussions.find(:all,:offset => 0, :limit => 10,:order => "created_at DESC")
+    @most_pop_discussions = Discussion.most_popular((Time.now - 0.50.hours), Time.now,@login_user.id)
+    @feeds  = @login_user.feed(Time.now-1.week,Time.now)
+
+    #      @feeds = Array.new
+    #      @feeds = (@ff + @tab_sites + @comments + @user_discussions + @shared_tabs + @shared_pics).sort { |a,b|
+    #        if a.updated_at && b.updated_at
+    #          response = 0
+    #          if a.updated_at > b.updated_at then response = -1 end
+    #          if b.updated_at > a.updated_at then response = 1 end
+    #          response
+    #        end
+    #      }
+    #end
+  end
+
+  def return_to_previous
+   redirect_to :back
+  end
+
+  #--
+  #
+  #Created on: 14/04/2012
+  #Purpose:
+  #++ This method is used add title and descritions for multiple image uploading.
+  def add_title_discription
+     @discussions = Discussion.where("title = 'title' and discussion = 'discussion' and discussion_type = '#{session[:current_images]}'")
+     @comments = Comment.where("title = 'title' and comment = 'comment' and comment_type = '#{session[:current_images]}'")
+     @photos = Picture.where("photo_detail = '#{session[:current_images]}'")
+     @album = Album.find(:all,:conditions=>["user_id=?",@login_user.id])
+    session[:current_images] = nil
+    respond_to do |format|
+      format.js
+    end
+  end
+
+  #--
+  #
+  #Created on: 14/04/2012
+  #Purpose:
+  #++ This method is used to save the multiple discussions created while multiple image uploading.
+  def save_multiple_discussion
+    params[:discussion_id].each do |i|
+      discussion = Discussion.find(i.to_i)
+      discussion.update_attributes(:title => params["title_#{i}"], :discussion => params["discussion_#{i}"], :share_type => params[:discussion][:share_type], :discussion_type => 'Picture')
+        @lastest_discussion = discussion
+          @groups = params[:posted_to_groups]
+          @groups.each do |grp|
+            disc_grp_disc = DiscussionGroupDiscussion.new(:discussion_group_id=>grp.to_i,:discussion_id=>@lastest_discussion.id)
+            disc_grp_disc.save
+            if !disc_grp_disc.save
+              @message = activerecord_error_list(disc_grp_disc.errors)
+              #raise ActiveRecord::Rollback, "to roll back if group is not acceptable"
+            end
+          end if !@groups.blank?
+          @crowds = params[:posted_to_crowds]
+          @crowds.each do |crd|
+            disc_crd_disc = SharedTab.new(:group_id => crd.to_i, :shareable_id => @lastest_discussion.id, :shareable_type => "Discussion")
+            disc_crd_disc.save
+            if !disc_crd_disc.save
+              @message = activerecord_error_list(disc_crd_disc.errors)
+              #raise ActiveRecord::Rollback, "to roll back if group is not acceptable"
+            end
+          end if !@crowds.blank?
+    end if !params[:discussion_id].nil?
+    redirect_to :back
+  end
+
+  #--
+  #
+  #Created on: 14/04/2012
+  #Purpose:
+  #++ This method is used to create the multiple discussions created while multiple image uploading.
+  def create_multiple_discussion
+    session[:current_images] = (0...8).map{65.+(rand(25)).chr}.join unless session[:current_images]
+    @discuss = Discussion.new(:title => "title", :discussion => "discussion", :discussion_type => "#{session[:current_images]}", :share_type => "public")
+    user_discussion = @discuss.user_discussions.build
+    user_discussion.user_id = @login_user.id
+      @picture = @discuss.images.build(:photo => params[:picture][:path], :details => "Discussion Picture", :user_id => @login_user.id)
+    if @discuss.save
+      respond_to do |format|
+        format.html {                                         #(html response is for browsers using iframe sollution)
+          render :json => [@picture.to_jq_upload].to_json,
+          :content_type => 'text/html',
+          :layout => false
+        }
+        format.json {
+          render :json => [@picture.to_jq_upload].to_json
+        }
+      end
+    else
+      render :json => [{:error => "custom_failure"}], :status => 304
+    end
+  end
+
+  
+
+  #
+  #Created on: 07/01/2012
+  #Purpose:
+  #++ This method is used to create discussion
+  def create_discussion
+    if params[:discussion] && params[:discussion][:discussion_type] == "attachment"
+      params[:title].each_with_index do |title, index|
+        discuss = Discussion.new(:title => title, :discussion => params[:discussion][index], :discussion_type => "Picture", :share_type => 'public')
+        user_discussion = discuss.user_discussions.build
+        disc_pic_att = discuss.images.build(:photo => params[:picture][:path], :details => "Discussion Picture")
+        user_discussion.user_id = @login_user.id
+        discuss.save
+      end
+    else
+      @current_page = params[:current_page]=='profile'
+      if params[:discussion] && params[:discussion][:discussion_type] == "URL" && !Discussion.is_valid_url?(params[:discussion][:discussion])
+        @message = "Please enter a valid URL."
+      else
+        Discussion.transaction do
+          @disc_error = @login_user.add_discussion?(params[:discussion])
+          if @disc_error.class.to_s == "Discussion" || @disc_error.class.to_s == "UserDiscussion"
+            @discussion = @disc_error.class.to_s == "Discussion" ? @disc_error : @disc_error.discussion
+            @message = "Discussion posted successfully."
+          else
+            @message = @disc_error
+          end
+          @lastest_discussion = @discussion
+          if !@lastest_discussion.nil?
+            if params[:discussion][:discussion_type] == "Document"
+              @attachment = params[:discussions][:attachment]
+              disc_att = DiscussionAttachment.new(:file=> @attachment, :attachable_id => @lastest_discussion.id, :attachable_type => "Discussion")
+              disc_att.save
+              if !disc_att.save
+                @message = activerecord_error_list(disc_att.errors)
+                raise ActiveRecord::Rollback, "to roll back if file is not acceptable"
+              end
+            end
+
+            if params[:discussion][:discussion_type] == "Picture"
+              if params[:is_uploaded]=="true"
+                @pic_attachment = params[:discussions][:attachment]
+                disc_pic_att = Image.new(:photo => @pic_attachment, :imageable_id=>@lastest_discussion.id, :imageable_type => "Discussion", :details => "Discussion Picture")
+                disc_pic_att.save
+              if !disc_pic_att.save
+                @message = activerecord_error_list(disc_pic_att.errors)
+                raise ActiveRecord::Rollback, "to roll back if file is not acceptable"
+              end
+            else
+              @photo = Image.new
+              url = params[:photo_url]
+              url_host = params[:added_from]
+              @photo.site_url = url_host
+              @photo.details= "Discussion Picture"
+              @photo.imageable_id = @lastest_discussion.id
+              @photo.imageable_type = "Discussion"
+              @photo.upload_image(url)
+              @photo.save
+              if @photo.id.nil?
+                @message = @photo.errors[:photo][0]
+                raise ActiveRecord::Rollback, "to roll back if file is not acceptable"
+              end
+            end
+          end
+
+          @groups = params[:posted_to_groups]
+          @groups.each do |grp|
+            disc_grp_disc = DiscussionGroupDiscussion.new(:discussion_group_id=>grp.to_i,:discussion_id=>@lastest_discussion.id)
+            disc_grp_disc.save
+            if !disc_grp_disc.save
+              @message = activerecord_error_list(disc_grp_disc.errors)
+              #raise ActiveRecord::Rollback, "to roll back if group is not acceptable"
+            end
+          end if !@groups.blank?
+
+          @crowds = params[:posted_to_crowds]
+          @crowds.each do |crd|
+            disc_crd_disc = SharedTab.new(:group_id => crd.to_i, :shareable_id => @lastest_discussion.id, :shareable_type => "Discussion")
+            disc_crd_disc.save
+            if !disc_crd_disc.save
+              @message = activerecord_error_list(disc_crd_disc.errors)
+              #raise ActiveRecord::Rollback, "to roll back if group is not acceptable"
+            end
+          end if !@crowds.blank?
+        end
+        host_port= request.host_with_port
+        @lastest_discussion.send_mails_to_non_site_crowd_user(current_user, host_port) if @lastest_discussion && @message == "Discussion posted successfully."
+      end
+    end
+    #redirect_to :back
+    respond_to do |format|
+      format.js
+    end
+    end
+  end
+  
+
+  #--
+  #
+  #Created on: 14/04/2012
+  #Purpose:
+  #++ This method is used to save the multiple comments.
+  def save_multiple_comments
+    params[:comment_id].each do |i|
+      comment = Comment.find(i.to_i)
+      if comment.update_attributes(:title => params["title_#{i}"], :comment => params["comment_#{i}"], :comment_type => 'Picture')
+        host_port= request.host_with_port
+        @discussion = comment.discussion
+        @notice="Comment posted successfully."
+        comment.discussion.users.each do |discussion_poster|
+          Notifier.delay.mail_to_user_on_discussion(@comments,discussion_poster,host_port) if discussion_poster.id!=current_user.id
+        end if !comment.discussion.nil?
+      end
+    end if !params[:comment_id].nil?
+    redirect_to :back
+  end
+
+  #--
+  #
+  #Created on: 14/04/2012
+  #Purpose:
+  #++ This method is used to create multiple Picture comments while multiple image uploading.
+  def post_multiple_comments
+     session[:current_images] = (0...8).map{65.+(rand(25)).chr}.join unless session[:current_images]
+     if params[:discussion]
+      @comments = Comment.new(:title => "title", :comment => "comment", :comment_type => "#{session[:current_images]}", :user_id => @login_user.id, :parent_id =>  params[:parent_id], :discussion_id => params[:discussion_id])
+      @picture = @comments.images.build(:photo=> params[:picture][:path], :details => "Discussion Picture", :user_id => @login_user.id) 
+     end
+
+    if @comments.save
+      respond_to do |format|
+        format.html {                                         #(html response is for browsers using iframe sollution)
+          render :json => [@picture.to_jq_upload].to_json,
+          :content_type => 'text/html',
+          :layout => false
+        }
+        format.json {
+          render :json => [@picture.to_jq_upload].to_json
+        }
+      end
+    else
+      render :json => [{:error => "custom_failure"}], :status => 304
+    end
+  end
+
+  #--
+  #
+  #Created on: 14/04/2012
+  #Purpose:
+  #++ This method is used to save the multiple comment responses on comments.
+  def post_multiple_comment_responses
+     session[:current_images] = (0...8).map{65.+(rand(25)).chr}.join unless session[:current_images]
+     if params[:discussion]
+      @comments = Comment.new(:title => "title", :comment => "comment", :comment_type => "#{session[:current_images]}", :user_id => @login_user.id, :parent_id => params[:parent_id], :discussion_id => params[:discussion_id])
+      @picture = @comments.images.build(:photo=> params[:picture][:path], :details => "Discussion Picture", :user_id => @login_user.id)
+     end
+      if @is_saved = @comments.save
+        host_port= request.host_with_port
+        @discussion = @comments.discussion
+        @notice="Comment posted successfully."
+        @comments.discussion.users.each do |discussion_poster|
+          Notifier.delay.mail_to_user_on_discussion(@comments,discussion_poster,host_port) if discussion_poster.id!=current_user.id
+        end if !@comments.discussion.nil?
+      else
+        @notice = @comments.errors.full_messages.to_sentence unless @comments.save#"Comment not able to comment"
+      end
+    if @comments.save
+      respond_to do |format|
+        format.html {                                         #(html response is for browsers using iframe sollution)
+          render :json => [@picture.to_jq_upload].to_json,
+          :content_type => 'text/html',
+          :layout => false
+        }
+        format.json {
+          render :json => [@picture.to_jq_upload].to_json
+        }
+      end
+    else
+      render :json => [{:error => "custom_failure"}], :status => 304
+    end
+  end
+
+  #
+  #Created on: 07/01/2012
+  #Purpose:
+  #++ This method is used to post comments
+  def post_comments
+    if params[:comment]
+      @comments = Comment.new(params[:comment])
+      if @comments.comment_type == "Picture"
+        if params[:is_uploaded]=="true"
+          img = params[:com_file]
+          @comments.images.build(:photo=>img) if img!=""
+
+        else
+          @photo = @comments.images.build
+          url = params[:photo_url]
+          url_host = params[:added_from]
+          @photo.site_url = url_host
+          @photo.details= "Comment Picture"
+          @photo.upload_image(url)
+        end
+      end
+      if @comments.comment_type == "Document"
+        doc = params[:com_file]
+        @comments.discussion_attachments.build(:file=>doc) if doc!=""
+      end
+      @comments.user_id = current_user.id
+      if @is_saved = @comments.save
+        host_port= request.host_with_port
+        @discussion = @comments.discussion
+        @notice="Comment posted successfully."
+        @comments.discussion.users.each do |discussion_poster|
+          Notifier.delay.mail_to_user_on_discussion(@comments,discussion_poster,host_port) if discussion_poster.id!=current_user.id
+        end
+      else
+        @notice = @comments.errors.full_messages.to_sentence unless @comments.save#"Comment not able to comment"
+      end
+      respond_to do |format|
+        format.js
+      end
+    end
+  end
+
+
+  def post_comment_responses
+    @comments = Comment.new(params[:comment])
+    if @comments.comment_type == "Picture"
+      if params[:is_uploaded]=="true"
+        img = params[:com_file]
+        @comments.images.build(:photo=>img) if img!=""
+      else
+        @photo = @comments.images.build
+        url = params[:photo_url]
+        url_host = params[:added_from]
+        @photo.site_url = url_host
+        @photo.details= "Comment Picture"
+        @photo.upload_image(url)
+      end
+    end
+    if @comments.comment_type == "Document"
+      doc = params[:com_file]
+      @comments.discussion_attachments.build(:file=>doc) if doc!=""
+    end
+    @comments.user_id = current_user.id
+    if @is_saved = @comments.save
+      @discussion= @comments.discussion
+      @notice = "Comment posted successfully."
+      host_port= request.host_with_port
+      @comments.discussion.users.each do |discussion_poster|
+        Notifier.delay.mail_to_user_on_discussion(@comments,discussion_poster,host_port) if discussion_poster.id!=current_user.id
+      end
+    else
+      @notice = @comments.errors.full_messages.to_sentence unless @comments.save
+    end
+    respond_to do |format|
+      format.js
+    end
+  end
+
+  #--
+  #Created on: 11/01/2012
+  #Purpose: #++ This method is used for update self posted comments
+  def update_comment_responses
+    @comments = Comment.find(params[:comment][:id])
+    com_type = params[:comment][:comment_type]
+
+    @image = @comments.images.first if com_type == "Picture"
+    if @comments.user_id
+      @comments.title = params[:comment][:title]
+      @comments.comment = params[:comment][:comment]
+      @comments.comment_type = com_type
+      if com_type == "Document"
+        if @comments.discussion_attachments.first.nil?
+          @doc = DiscussionAttachment.new(:attachable_id=>@comments.id,:attachable_type=>"Comment",:file=>params[:com_file])
+        else
+          @doc =  @comments.discussion_attachments.first
+          @doc.file = params[:com_file]
+        end
+
+        @saved = @comments.save && @doc.save
+      elsif com_type == "Picture"
+        if params[:is_uploaded]=="true"
+          if @comments.images.first.nil?
+            @image = Image.new(:imageable_id=>@comments.id,:imageable_type=>"Comment",:photo=>params[:com_file])
+          else
+            @image =  @comments.images.first
+            @image.photo = params[:com_file]
+          end
+        else
+          url = params[:photo_url]
+          url_host = params[:added_from]
+          if @comments.images.first.nil?
+            @image = Image.new(:imageable_id=>@comments.id,:imageable_type=>"Comment")
+          else
+            @image =  @comments.images.first
+          end
+          @image.site_url = url_host
+          @image.details= "Comment Picture"
+          @image.upload_image(url)
+        end
+        
+        @saved = @comments.save && @image.save
+      else
+        @saved = @comments.save
+      end
+      if @saved
+        @comments.discussion_attachments.first.destroy  if com_type!= "Document" && !@comments.discussion_attachments.first.nil?
+        @comments.images.first.destroy  if com_type!= "Picture" && !@comments.images.first.nil?
+        @notice="Comment updated successfully."
+        #redirect_to :action=>'index'
+        host_port= request.host_with_port
+        @comments.discussion.users.each do |discussion_poster|
+          Notifier.delay.mail_to_user_on_discussion(@comments,discussion_poster, host_port) if @comments.user_id != @login_user.id
+        end
+        #render :partial => "inner_comment", :locals=>{:response=>@comments}
+        respond_to do |format|
+          format.js
+        end
+      else
+        @notice = @image && !@image.errors.blank? ? @image.errors.full_messages.to_sentence : (@doc && !@doc.errors.blank? ? @doc.errors.full_messages.to_sentence : "Unable to update comment.")
+        #redirect_to :action=>'index'
+        #render :text => params[:response_comment]
+        respond_to do |format|
+          format.js
+        end
+      end
+    else
+      @notice = "Wrong user"
+      render :text => params[:comment]
+    end
+  end
+
+
+  #--
+  #Created on: 11/01/2012
+  #Purpose: #++ This method is used for delete self posted comments
+
+  def delete_comment
+    @comment = Comment.find(params[:id])
+    if @login_user.is_admin?
+      if delete_children_comments(@comment)
+        @notice="Comment deleted successfully."
+        render :text => "Success"
+      end
+    else
+      if @comment.children.blank? && @comment.destroy
+        @notice=" posted comment delete successfully."
+        render :text => "Success"
+      else
+        @notice="Comment not able to delete"
+        #redirect_to :action=>'index'
+        render :text => params[:response_comment]
+      end
+    end
+  end
+
+
+  # GET /discussions/new GET /discussions/new.xml
+  def new
+    @discussion = Discussion.new
+
+    respond_to do |format|
+      format.html # new.html.erb
+      format.xml  { render :xml => @discussion }
+    end
+  end
+
+  # GET /discussions/1/edit
+  def edit
+    @discussion = Discussion.find(params[:id])
+  end
+
+
+
+  # PUT /discussions/1
+  # PUT /discussions/1.xml
+  def update
+    @discussion = Discussion.find(params[:id])
+
+    respond_to do |format|
+      if @discussion.update_attributes(params[:discussion])
+        format.html { redirect_to(@discussion, :notice => 'Discussion was successfully updated.') }
+        format.xml  { head :ok }
+      else
+        format.html { render :action => "edit" }
+        format.xml  { render :xml => @discussion.errors, :status => :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /discussions/1
+  # DELETE /discussions/1.xml
+  def destroy
+    @discussion = Discussion.find(params[:id])
+    @discussion.destroy
+
+    respond_to do |format|
+      format.html { redirect_to(discussions_url) }
+      format.xml  { head :ok }
+    end
+  end
+
+
+
+  #
+  #Created on: 10/01/2012
+  #Purpose:
+  #++ This method is used load all comments
+  def load_comments
+    @discussion = Discussion.find(params[:id].to_i)
+    render :partial => "all_comments", :locals=>{:discussion=>@discussion}, :layout => false
+  end
+
+  #
+  #Created on: 10/01/2012
+  #Purpose:
+  #++ This method is used for display all discussion throughout system
+  def all_discussion
+    @groups = @login_user.all_public_private_groups
+    @crowds = @login_user.groups
+    @most_pop_discussions = Discussion.most_popular((Time.now.utc - 30.day), Time.now.utc,@login_user.id,1)
+  end
+
+  #
+  #Created on: 10/01/2012
+  #Purpose:
+  #++ This method is used for display all discussion throughout system
+  def load_group_discussion
+    @groups = @login_user.all_public_private_groups
+    @groups.each do |group|
+      @most_pop_group_discussions = Discussion.most_popular((Time.now-30.day), Time.now,@login_user.id,1,params[:id].to_i==0 ? nil : params[:id], group.id)
+    end
+    render :partial => "all_discussion_as_selction", :locals=>{:most_pop_discussions=>@most_pop_group_discussions}, :layout => false
+  end
+
+  
+  #
+  #Created on: 11/01/2012
+  #Purpose:
+  #++ This method is used load all discussions with my coments
+  def load_my_comments
+    #@mycomments = Comment.find(:all,:select=>"discussion_id",:group=>"discussion_id", :conditions=>["user_id=?", params[:id]], :order=>"updated_at" )
+    #d_ids = Array.new
+    #@mycomments.each do |my_c|
+    #  d_ids << my_c.discussion_id
+    #end
+    #@discussions = Discussion.find_all_by_id(d_ids)
+    @other_user = User.find_by_id(params[:id].to_i)
+    @discussions = @other_user.commented_discussions(1)
+    render :partial => "my_comments", :locals=>{:discussion=>@discussions}, :layout => false
+  end
+
+  
+  #
+  #Created on: 11/01/2012
+  #Purpose:
+  #++ This method is used load all discussions with my coments
+  def load_my_discussions
+    @user = User.find_by_id(params[:id].to_i)
+    @discussions = @user.visible_discussions(@login_user.id, 1)
+    #@discussions = @user.discussions.find(:all,:offset => 0, :limit => 10,:order => "created_at DESC")
+    render :partial => "my_discussions", :locals=>{:discussions=>@discussions,:direct=>false}, :layout => false
+  end
+
+  #
+  #Created on: 11/01/2012
+  #Purpose:
+  #++ This method is used for display discussion
+  def load_discussion_as_per_time
+    page = params[:page] ? params[:page].to_i : 1
+    start_time = case params[:id]
+    when "30min" then Time.now.utc - 0.50.hours
+    when "day" then Time.now.utc - 1.day
+    when "week" then Time.now.utc - 1.week
+    when "year" then Time.now.utc - 1.year
+    else Time.now.utc - 30.day
+    end
+    group_id = params[:group_id] == 0 ? nil : params[:group_id]
+    crowd_id = params[:crowd_id] == 0 ? nil : params[:crowd_id]
+    to = start_time ? Time.now.utc : nil
+    order = params[:order_by]=="recent" ? nil : (params[:order_by]=="ratings")
+
+    @most_pop_discussions= Discussion.most_popular(start_time, Time.now.utc, @login_user.id, page, order, group_id,crowd_id)
+    render :partial => "all_discussion_as_selction", :locals=>{:most_pop_discussions=>@most_pop_discussions}, :layout => false
+  end
+
+  #
+  #Created on: 07/04/2012
+  #Purpose:
+  #++ This method is used for display discussion
+  def load_feeds_by_group
+    @feeds  = @login_user.feed((Time.now-1.week), Time.now, params[:id].to_i==0 ? nil : params[:id])
+    render :partial => "feeds", :locals=>{:feeds => @feeds}, :layout => false
+    
+  end
+
+  #
+  #Created on: 13/01/2012
+  #Purpose:
+  #++ This method is used deleting discussion
+  def delete_discussion
+    @discussion = Discussion.find_by_id(params[:id])
+    render :text => (@discussion && @discussion.is_deletable?(@login_user) && @discussion.destroy) ? "Success" : "Fail"
+  end
+
+
+  #
+  #Created on: 13/01/2012
+  #Purpose:
+  #++ This method is used deleting comment tree
+  def delete_children_comments(comment)
+    if comment.children.count>0
+      comment.children.each do |children|
+        delete_children_comments(children)
+      end
+    end
+    return true if comment.destroy
+  end
+
+  #
+  #Created on: 23/01/2012
+  #Purpose:
+  #++ This method is used to join discussio functionality of the Updates From Followed Members Page
+  def join_discussion
+    @discussion = Discussion.find(params[:id])
+    @login_user.add_discussion?({:discussion => @discussion.discussion})
+    @message = "Discussion joined successfully."
+    respond_to do |format|
+      format.js  
+    end
+  end
+
+  #
+  #Created on: 21/02/2012
+  #Purpose:
+  #++ This method is used load my discussions
+  def load_my_discussions_on_scroll
+    @user = User.find_by_id(params[:id].to_i)
+    @discussions = @user.visible_discussions(@login_user.id, params[:page].to_i)
+    respond_to do |format|
+      format.js
+    end
+  end
+
+  #
+  #Created on: 21/02/2012
+  #Purpose:
+  #++ This method is used load my discussions
+  def load_most_pop_discussions_on_scroll
+    @most_pop_discussions = Discussion.most_popular((Time.now - 0.50.hours), Time.now,@login_user.id,params[:page].to_i)
+    #@discussions = @login_user.discussions.find(:all,:offset => off, :limit => per_page,:order => "created_at DESC")
+    respond_to do |format|
+      format.js
+    end
+  end
+
+  #
+  #Created on: 22/02/2012
+  #Purpose:
+  #++ This method is used load my comments
+  def load_my_comments_on_scroll
+    @other_user = User.find_by_id(params[:id].to_i)
+    @discussions = @other_user.commented_discussions(params[:page].to_i)
+  end
+
+  #
+  #Created on: 22/02/2012
+  #Purpose:
+  #++ This method is used load my discussions
+  def show_discussion
+    @discussion = Discussion.find(params[:id])
+    render :partial => "show_discussion", :locals=>{:discussion=>@discussion}
+  end
+
+
+  def load_more_feeds
+    page = params[:page].to_i
+    from = Time.now - page.week
+    to = Time.now - (page - 1).week
+    @feeds  = @login_user.feed(from,to, params[:group_id].to_i==0 ? nil : params[:group_id])
+    #    @feeds = Array.new
+    #    @feeds = (@ff + @tab_sites + @comments + @user_discussions + @shared_tabs + @shared_pics).sort { |a,b|
+    #      if a.updated_at && b.updated_at
+    #        response = 0
+    #        if a.updated_at > b.updated_at then response = -1 end
+    #        if b.updated_at > a.updated_at then response = 1 end
+    #        response
+    #      end
+    #    }
+    respond_to do |format|
+      format.js
+    end
+  end
+
+  def web_content
+    if HtmlContent.exists?(:discussion_id=>params[:id])
+      @discussion = Discussion.find(params[:id])
+      #@url_body =  HtmlContent.find_by_discussion_id(params[:id])
+      @url_body = Nokogiri::HTML(open(@discussion.discussion)).to_html
+    end
+    render :layout=>false
+  end
+
+  def updates_from_following_follower
+    @groups = @login_user.all_public_private_groups
+    @feeds  = @login_user.feed(Time.now-1.week,Time.now)
+  end
+
+end
+
+   

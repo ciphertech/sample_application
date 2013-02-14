@@ -1,0 +1,55 @@
+<div class="group_mem_container" id="private_group_nsu">
+  <span class="green_header">Added Users</span>
+  <div class="grp_members_outer_div">
+    <% non_ste_users = group.non_site_users.where("invitation_type='Added'") %>
+    <div style="width:<%= non_ste_users.length*70 %>px;">
+      <% non_ste_users.each do |nsu| %>
+        <div class="user_pic_2 follower_following_img_block" style="padding: 5px;">
+          <a href="javascript:void(0);">
+            <img class="medium_user_image" src="/images/profile_image.jpg" title="<%= nsu.email %>"/>
+          </a>
+          <span>
+            <%= link_to "Edit", {:controller=>:discussion_groups, :action=>:edit_added_group_user,:id=>nsu.id}, :remote=>true, :class=>"edit_nsu action_link" %>
+            <%= link_to image_tag("/images/cross-icon.png", :style=>"height: 10px;width: 10px;"), {:controller=>:discussion_groups, :action=>:delete_added_group_user,:id=>nsu.id}, :confirm=>"Are you sure you want to remove?",:remote=>true, :class=>"delete_nsu",:title=>"Remove" %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <script type="text/javascript">
+    jQuery(function(){
+      jQuery('.delete_nsu').bind('ajax:success',  function(evt, data, status, xhr){
+        if(data=="Success")
+        {
+          jQuery(this).closest(".follower_following_img_block").fadeOut("slow").remove();
+          display_flash_message("User not removed. Please try again.");
+        }
+        else
+        {
+          display_flash_message("User not removed. Please try again.");
+        }
+      }).bind("ajax:error", function(evt, data, status, xhr){
+        //console.log(data)
+        if(data.responseText=="Success")
+        {
+          jQuery(this).closest(".follower_following_img_block").fadeOut("slow").remove();
+          display_flash_message("User removed successfully from group.");
+        }
+        else
+        {
+          display_flash_message("User not removed. Please try again.");
+        }
+        
+      });
+      jQuery('.edit_nsu').bind('ajax:success',  function(evt, data, status, xhr){
+        jQuery("body").append(jQuery(data));
+        jQuery(".pop_up").center();
+
+      }).bind("ajax:error", function(evt, data, status, xhr){
+        //console.log(data)responseText==
+        jQuery("body").append(jQuery(dataresponseText));
+        jQuery(".pop_up").center();
+      });
+    });
+  </script>
+</div>

@@ -1,0 +1,226 @@
+<div class="grey_overlay" id="public_group_user">
+  <div class="pop_up" style="height: 170px">
+    <div class="popup_inner_div">
+      <a href="javascript:void(0);" onclick="jQuery('#public_group_user').fadeOut();" class="popup_close_btn">&nbsp;</a>
+      <div class="popup_content" style="left: -31px;width: 450px;">
+        <%= form_for :invite_user_to_groups, :url=>{:controller=> :discussion_groups, :action => 'invite_user_to_groups' }, :html=>{:id=>"public_send_email_form"}, :remote=>true do |f|  %>
+          <span class="popup_heading">Invite User</span>
+<center>
+          <table width="100%" class="popup_form_table" cellpadding="0px" cellspacing="0px">
+            <tr>
+              <td align="right" width="100px">
+               <input id="invite_by_email" checked name="invite_to" value="by_email" id="email_public" type="radio"  onclick="jQuery('#invite_group_user_error').html('');"/></td>
+<td style="font-size:11px; width:30px; padding-top:17px" align="center" valign="middle">Email</td>
+                
+                <td  width="10px" align="center" valign="middle">
+                  <input id="invite_by_username" name="invite_to" value="by_username" id="username_public" type="radio" class="float_l" onclick="jQuery('#invite_group_user_error').html('');"/></td>
+<td style="font-size:11px; width:50px; padding-top:17px" align="center" valign="middle">Username</td>
+                <td  width="10px" align="center" valign="middle">
+                  <input id="invite_by_group" name="invite_to" value="by_group" id="group_public_private" type="radio" class="float_l" onclick="jQuery('#invite_group_user_error').html('');" /></td>
+<td style="font-size:11px; width:40px; padding-top:17px" align="center" valign="middle">Group</td>
+                <td  width="10px" align="center" valign="middle">
+                  <input id="invite_by_gmail" name="invite_to" value="by_gmail" id="" type="radio" class="float_l" onclick="add_gmail_cont(<%= @discussion_group.id %>)" /></td>
+<td style="font-size:11px; width:270px; padding-top:17px" align="left" valign="middle">Import Gmail Contact</td>
+            </tr>
+            <tr>
+              <td align="center" colspan="8">
+                <%= text_field 'invite_user_to_groups', 'email', { :style=>"width:200px;", :id=>"invite_group_user_email", :class => "email_box type_text_box" } %>
+
+                <%= text_field 'invite_user_to_groups', 'username', { :style=>"width:200px;display:none;", :id=>"invite_group_user_username", :class => "username_box type_text_box hidden_element" } %>
+
+                <%= text_field 'invite_user_to_groups', 'groups', { :style=>"width:200px;display:none;", :id=>"invite_group_user_groups", :class => "group_box type_text_box hidden_element" } %>
+                <span id="invite_group_user_error" class="form_error"></span>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding-top:0px;" colspan="8"><input type="submit" class="blue_btn" value="Send" onclick="return invite_form_validation();"/></td>
+            </tr>
+          </table>
+
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    jQuery("#public_group_user .pop_up").center();
+  });
+
+  jQuery('#invite_by_email').click(function(){
+    jQuery('.type_text_box').hide();
+    jQuery('.email_box').show();
+  });
+  jQuery('#invite_by_username').click(function(){
+    jQuery('.type_text_box').hide();
+    jQuery('.username_box').show();
+  });
+  jQuery('#invite_by_group').click(function(){
+    jQuery('.type_text_box').hide();
+    jQuery('.group_box').show();
+  });
+
+
+  var a_flag = false;
+  function invite_form_validation()
+  {
+    flag = true;
+    var current_email = jQuery("#invite_group_user_email").val();
+    var current_username = jQuery("#invite_group_user_username").val();
+    var current_group = jQuery("#invite_group_user_groups").val();
+    var emailRegExp=/^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/;
+    error ="";
+    if(current_email=="" && jQuery('#invite_by_email').is(':checked'))
+    {
+      flag = false;
+      error = "Please enter email";
+    }
+    else if(!current_email.match(emailRegExp) && jQuery('#invite_by_email').is(':checked'))
+    {
+      flag = false;
+      error = "Please enter valid email";
+    }
+    
+    if(current_username=="" && jQuery('#invite_by_username').is(':checked'))
+    {
+      flag = false;
+      error = "Please enter username";
+      if(!a_flag){
+        error = "No results found!";
+        flag = false;
+      }
+    }
+
+    if(current_group=="" && jQuery('#invite_by_group').is(':checked'))
+    {
+      flag = false;
+      error = "Please enter group";
+      if(!a_flag){
+        error = "No results found!";
+        flag = false;
+      }
+    }
+   
+    jQuery("#invite_group_user_error").html(error);
+    return flag;
+  }
+
+
+  //for autocomplete username
+  jQuery(document).ready(function(){
+
+
+
+    function split( val ) {
+      return val.split( /,\s*/ );
+    }
+    function extractLast( term ) {
+      return split( term ).pop();
+    }
+
+    $( "#invite_group_user_username" )
+    // don't navigate away from the field on tab when selecting an item
+    .bind( "keydown", function( event ) {
+      a_flag = false;
+      if ( event.keyCode === $.ui.keyCode.TAB &&
+        $( this ).data( "autocomplete" ).menu.active ) {
+        event.preventDefault();
+      }
+
+    })
+    .autocomplete({
+      source: function( request, response ) {
+        $.getJSON( "/search_user_names_for_message/"+extractLast( request.term ),response );
+      },
+      search: function() {
+        // custom minLength
+        var term = extractLast( this.value );
+        if ( term.length < 1 ) {
+          return false;
+        }
+      },
+      focus: function() {
+        // prevent value inserted on focus
+        return false;
+      },
+      select: function( event, ui ) {
+
+        var terms = split( this.value );
+        // remove the current input
+        terms.pop();
+        // add the selected item
+        if(this.value.indexOf(ui.item.value+",")==-1)
+        {
+          terms.push( ui.item.value );
+        }
+        // add placeholder to get the comma-and-space at the end
+        terms.push( "" );
+        this.value = terms.join( ", " );
+        a_flag = true;
+        return false;
+      }
+    });
+
+
+
+
+
+  });
+
+  //for autocomplete group name
+  jQuery(document).ready(function(){
+    function split( val ) {
+      return val.split( /,\s*/ );
+    }
+    function extractLast( term ) {
+      return split( term ).pop();
+    }
+
+    $( "#invite_group_user_groups" )
+    // don't navigate away from the field on tab when selecting an item
+    .bind( "keydown", function( event ) {
+      a_flag = false;
+      if ( event.keyCode === $.ui.keyCode.TAB &&
+        $( this ).data( "autocomplete" ).menu.active ) {
+        event.preventDefault();
+      }
+    })
+    .autocomplete({
+      source: function( request, response ) {
+        $.getJSON( "/search_for_group/"+extractLast( request.term ),response );
+      },
+      search: function() {
+        // custom minLength
+        var term = extractLast( this.value );
+        if ( term.length < 1 ) {
+          return false;
+        }
+      },
+      focus: function() {
+        // prevent value inserted on focus
+        return false;
+      },
+      select: function( event, ui ) {
+
+        var terms = split( this.value );
+        // remove the current input
+        terms.pop();
+        // add the selected item
+        if(this.value.indexOf(ui.item.value+",")==-1)
+        {
+          terms.push( ui.item.value );
+        }
+        // add placeholder to get the comma-and-space at the end
+        terms.push( "" );
+        this.value = terms.join( ", " );
+        return false;
+      }
+    });
+
+
+
+
+
+  });
+</script>

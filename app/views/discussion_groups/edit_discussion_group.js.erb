@@ -1,0 +1,10 @@
+var output_html = ("<%= escape_javascript(@discussion_group.name).html_safe %>");
+jQuery("#edit_disc_group_popup").fadeOut(function(){
+ <% if @discussion_group.errors.blank? %>
+   jQuery("#discussion_group_name<%= @discussion_group.id%>").html(output_html);
+ <% end %>
+  display_flash_message("<%= escape_javascript(@notice).html_safe %>");
+}).remove();
+jQuery("#group_disc_name_edit_<%= @discussion_group.id %>").html("<%= @discussion_group.name %>")
+
+is_sending = false;

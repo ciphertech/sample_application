@@ -1,0 +1,15 @@
+<%= @author.username %> is discussing: <br/>
+<% if @discussion.discussion_type == "URL" %>
+  <a href="<%= @discussion.discussion %>"><%= @discussion.site_title %></a>
+<% else %>
+  <span style="font-weight: bold;color: black">
+    <b>
+    <%= @discussion.title if @discussion.title.present? %>
+    </b>
+  </span>
+  <br/>
+  <%= @discussion.discussion %>
+<% end %>
+
+<br/>
+<%= show_discussion_button(@host, @discussion.id).html_safe %>

@@ -1,0 +1,28 @@
+<%= form_tag "/users/add_email_to_crowd/#{@group.id}" , :remote=>true do |f| %>
+  <div class="gmail_cont_table_div">
+    <table>
+      <% contacts.each do |cont| %>
+        <tr>
+          <td>
+            <input type="checkbox" name="user[email][]" class="conatcts_chk" value="<%= cont[1] %>"/>
+          </td>
+          <td>
+            <span class="mail_ids" style="width: 150px;" title="<%= cont[0] %>">
+              <%= cont[0].present? ? truncate(cont[0], :length=>20) : truncate(cont[1], :length=>20)  %>
+            </span>
+          </td>
+          <td>
+            <span class="mail_ids" title="<%= cont[0] %>">
+              <%= truncate(cont[1], :length=>25) %>
+            </span>
+          </td>
+        </tr>
+      <% end %>
+
+    </table>
+  </div>
+  <div class=" clear_both" style="padding: 10px">
+    <input type="hidden" name="group[id]" value="<%= @group.id %>" />
+    <input type="submit" value="Add" onclick="return validate_add_gmail_cont_form(jQuery(this).closest('form'));"/>
+  </div>
+<% end %>

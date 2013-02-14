@@ -1,0 +1,184 @@
+<% if params[:link] ==  '/discussions/post_multiple_comments' || params[:link] ==  '/discussions/post_multiple_comment_responses' %>
+  <%= form_for :images, :url=>{:controller=>:discussions, :action => 'save_multiple_comments'}, :html => {:multipart => true, :id=>"fileupload"} do |f|  %>
+    <%  @comments.each do |comment| %>
+      <%= hidden_field_tag 'comment_id[]', comment.id  %>
+      <div class="template-upload " style="float:left;margin:5px 0;">
+        <span> <input name="title_<%= comment.id %>" style="width:140px;padding-left:10px;border:1px solid #CCCCCC"></input></span>
+        <br/>
+        <div class="image_block">
+
+          <span class="cancel">
+            <button class="close_pop_btn">
+              <i class="icon-ban-circle icon-white"></i>
+              <span class="cancel_text"></span>
+            </button>
+          </span>
+
+          <span class="preview"><span class="fade_align">
+
+              <img style="width:140px;" src="<%= comment.images[0].photo(:medium) %>" class="album_prev_thumb" />
+            </span></span>
+        </div>
+
+        <br/>
+        <span> <textarea name="comment_<%= comment.id %>"></textarea></span>
+        <td class="error" colspan="2"></td>
+        <td colspan="2"></td>
+        <span class="cancel">
+        </span>
+
+      </div>
+    <% end %>
+ <div class="clear_both" style="padding-left: 20px;">
+   <table>
+     <tr>
+       <td>
+               <input type="submit" value="Upload" class="btn btn-primary start"/>
+      <a href="/discussions/return_to_previous/1"><input type="button" value="Cancel" class="btn btn-primary"/></a>
+
+       </td>
+     </tr>
+   </table>
+ </div>
+  <% end %>
+
+<% else %>
+
+  <% if params[:link] ==  '/albums/create_multiple_photos' %>
+    <%= form_for :images, :url=>{:controller=>:albums, :action => 'save_multiple_photos'}, :html => {:multipart => true, :id=>"fileupload"} do |f|  %>
+      <%  @photos.each do |photo| %>
+        <%= hidden_field_tag 'photo_id[]', photo.id  %>
+        <div class="template-upload " style="float:left;margin:5px 0;">
+          <div class="image_block">
+
+            <span class="cancel">
+              <button class="close_pop_btn">
+                <i class="icon-ban-circle icon-white"></i>
+                <span class="cancel_text"></span>
+              </button>
+            </span>
+
+            <span class="preview"><span class=" fade_align">
+                <img style="width:140px;" src="<%= photo.photo(:medium) %>" class="album_prev_thumb" />
+              </span></span>
+          </div>
+
+          <br/>
+          <span> <textarea name="photo_detail_<%= photo.id %>"></textarea></span>
+          <td class="error" colspan="2"></span></td>
+          <td colspan="2"></td>
+          <span class="cancel">
+          </span>
+
+        </div>
+
+      <% end %>
+
+
+      <div class="clear_both add_rem_ph_form" style="height: 25px">
+        <label for="album">Select an Album:</label>
+        <select  name="photos[album_id]" class="album_select_menu" id="album_select_menu_from_syst">
+          <option value="none">Select Album</option>
+          <% @album.each do |a| %>
+            <option value="<%= a.id %>" <% if params[:id].to_i== a.id %>selected<% end %> ><%= a.name %></option>
+          <% end %>
+        </select><br/>
+        <span id="album_photo_frm_syst_error" class="form_error"></span>
+        <!--label for="album">Details:</label>
+        <textarea id="photo_frm_syst_detail" class="phot_details_text" name="photos[photo_detail]"> </textarea>
+        <span id="detail_error_for_photo_frm_syst" class="form_error"></span>
+        <br/-->
+      </div>
+
+      <div class="clear_both ph_privacy_options_div"><br/>
+        <span class="ph_privacy_options"><input checked name="photos[share_type]" value="1" type="radio" class="float_l" onclick="jQuery('#groups').hide();jQuery('#show_photo_from_syst .pop_up').css('height','310px');jQuery('#show_photo_from_syst .pop_up').center();" /><label>Private</label> </span>
+        <span class="ph_privacy_options"><input name="photos[share_type]" value="0" type="radio" class="float_l" onclick="jQuery('#groups').hide();jQuery('#show_photo_from_syst .pop_up').css('height','310px');jQuery('#show_photo_from_syst .pop_up').center();" /><label>Public</label> </span>
+        <span class="ph_privacy_options"><input id="syst_share_with_grp_chk" name="photos[share_type]" value="2" type="radio" class="float_l" onclick="fetch_my_groups_for_album();" /><label>Share With Groups</label> </span>
+        <br/>
+        <span class="form_error" id="syst_photo_group_error"></span>
+        <div id="groups" class="groups float_l" style="display: none;width:398px;" align="left"></div>
+      </div>
+ <div class="clear_both" style="padding-left: 10px;float:left;">
+   <table>
+     <tr>
+       <td>
+               <input type="submit" value="Upload" onclick="return check_album();" class="btn btn-primary start"/>
+      <a href="/discussions/return_to_previous/1"><input type="button" value="Cancel" class="btn btn-primary"/></a>
+
+       </td>
+     </tr>
+   </table>
+ </div>
+    <% end %>
+
+  <%  else %>
+
+
+    <%= form_for :images, :url=>{:controller=>:discussions, :action => 'save_multiple_discussion'}, :html => {:multipart => true, :id=>"fileupload"} do |f|  %>
+      <%  @discussions.each do |discussion| %>
+        <%= hidden_field_tag 'discussion_id[]', discussion.id  %>
+        <div class="template-upload " style="float:left;margin:5px 0;">
+          <span> <input name="title_<%= discussion.id %>" style="width:140px;padding-left:10px;border:1px solid #CCCCCC"></input></span>
+          <br/>
+          <div class="image_block">
+
+            <span class="cancel">
+              <button class="close_pop_btn">
+                <i class="icon-ban-circle icon-white"></i>
+                <span class="cancel_text"></span>
+              </button>
+            </span>
+
+            <span class="preview"><span class=" fade_align">
+                <img style="width:140px;" src="<%= discussion.images[0].photo(:medium) %>" class="album_prev_thumb" />
+              </span></span>
+          </div>
+
+          <br/>
+          <span> <textarea name="discussion_<%= discussion.id %>"></textarea></span>
+          <td class="error" colspan="2"></td>
+          <td colspan="2"></td>
+          <span class="cancel">
+          </span>
+
+        </div>
+
+      <% end %>
+
+      <% if params[:link] == '/discussion_groups/create_multiple_discussion' %>
+        <input type="hidden" name="discussion[share_type]" value="groups"/>
+      <% else %>
+        <div class="clear_both" style="padding-left: 20px;">
+          <span class="clear_both discussion_frm_heading" style="margin-bottom: 4px;">Discuss with</span>
+          <table>
+            <tr>
+              <td>
+                <input type="radio" checked id="discuss_with_all_user" name="discussion[share_type]" value="public" onclick="jQuery('.d_group_box').hide();" />
+              </td>
+              <td><label for="share_type">All User</label>
+              </td>
+              <td>
+                <input type="radio" id="discuss_with_group" name="discussion[share_type]" value="groups" onclick="jQuery('.d_group_box').show();" />
+              </td>
+              <td><label for="share_type">Groups/Crowds</label>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="d_group_box clear_both hidden_element" align="left">
+          <strong class="clear_both discussion_frm_heading">Select groups</strong>
+          <%= render :partial => 'load_groups' %>
+        </div>
+
+        <div class="d_group_box clear_both hidden_element" align="left">
+          <strong class="clear_both discussion_frm_heading">Select crowds</strong>
+          <%= render :partial => 'load_crowds' %>
+        </div>
+      <% end %>
+      <input type="submit" value="Upload" class="btn btn-primary start"/>
+      <a href="/discussions/return_to_previous/1"><input type="button" value="Cancel" class="btn btn-primary"/></a>
+
+    <% end %>
+  <% end %>
+<% end %>

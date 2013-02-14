@@ -1,0 +1,46 @@
+<!-- Photo starts here -->
+<% host_url = "http://"+request.host_with_port %>
+<div class="photos picture_<%= pic.id %>">
+  <div class="photo_actions">
+    <% if pic.user_id!=@login_user.id %>
+      <%  if !pic.is_liked_by(@login_user.id) %>
+        <%=  link_to 'Like', {:controller => 'discussion_groups', :action => 'like_picture', :id => pic.id }, :remote=>true, :class => "album_action_link float_l like_link_#{pic.id}" %>
+      <% else %>
+        <%=  link_to 'Unlike', {:controller => 'discussion_groups', :action => 'unlike_picture', :id => pic.id }, :remote=>true, :class => "album_action_link float_l like_link_#{pic.id}" %>
+      <% end %>
+    <% end %>
+    <a href="javascript:void(0);" onclick="import_picture_from_group_album(<%= pic.id %>)" class="album_action_link float_l" >Import</a>
+    <% if (@login_user.id == @discussion_group.user_id || @login_user.id == pic.user_id) %>
+      <a class="float_r album_action_link" href="javascript:void(0);">
+        <img title="Remove" style="width: 10px; height: 10px;" onclick="delete_image(<%= pic.id %>);" src="/images/cross-icon.png" alt="Cross-icon"/>
+      </a>
+    <% end %>
+
+  </div>
+  <div class="photo_pic_conatiner float_l">
+    <a href="javascript:void(0);" class="float_l" style="display:block; clear:both; width:192px;height:<%= pic.photo.height(:medium) %>px" onclick="display_image_full_popup(<%= pic.id %>);">
+
+      <img src="<%=host_url%><%= pic.photo(:medium) %>" class="photo_pic" style="min-height:<%= pic.photo.height(:medium) %>px" />
+    </a>
+    <!--<img src="/images/test_mage.jpg" class="photo_pic"/></a>-->
+    <span class="image_detail"><%= pic.details %> </span>
+    <span class="image_detail small_font">
+      <span class="pic_count_<%= pic.id %>" > <%= pic.like_count %></span> Like | <span class="pic_comment_count_<%= pic.id %>" ><%= pic.comment_count %></span> Comments
+    </span>
+  </div>
+  <div class="ph_post_com_div">
+    <%= form_for :photos, :url=>{:controller=>:discussion_groups, :action => 'post_photo_comment'},:remote=>true do |f|  %>
+      <textarea name="comment" class="ph_com_text_area"></textarea>
+      <input type="hidden" name="image_id" value="<%= pic.id %>"/>
+      <input type="submit" value="Post"  class="float_r" onclick="return check_phot_comment_form(jQuery(this));" />
+    <% end %>
+  </div>
+  <div class="photos_comment_div float_l photos_comment_div_<%= pic.id %>">
+    <% pic.top_five_comments.each do |p_c| %>
+      <%= render :partial => "discussion_groups/image_partials/photo_comment_block", :locals=>{:comment=>p_c} %>
+    <% end %>
+
+  </div>
+
+</div>
+<!-- Photo ends here -->

@@ -1,0 +1,15 @@
+is_sending = false;
+<% if @notice=="Comment updated successfully." %>
+  <%if params[:com_level]=="outer"%>
+    var $comments_html = jQuery("<%= escape_javascript(render :partial => "outer_comment", :locals=>{:comment=>@comments,:is_creating=>true}).html_safe %>");
+  <% else %>
+    var $comments_html = jQuery("<%= escape_javascript(render :partial => "inner_comment", :locals=>{:response=>@comments,:is_creating=>true}).html_safe %>");
+  <% end %>
+  jQuery(".comment_<%=@comments.id%>").replaceWith($comments_html);
+
+  apply_ratings();
+
+<% end %>
+display_flash_message("<%= !@comments.errors.blank? ? @comments.errors.full_messages.to_sentence : @notice %>");
+
+set_comment_form();

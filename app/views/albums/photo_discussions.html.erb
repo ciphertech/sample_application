@@ -1,0 +1,176 @@
+<script type="text/javascript" src="/javascripts/jquery.masonry.js"></script>
+<script type="text/javascript" src="/javascripts/modernizr-transitions.js"></script>
+<script type="text/javascript" src="/javascripts/pictures.js"></script>
+<style>
+  select.sort_options
+  {
+    width: 130px;
+    float: left;
+  }
+</style>
+
+<span class="blue_header">Photos
+  <a class="group_add_user_link" href="javascript:void(0);" onclick="jQuery('#add_ph_op_div').show();jQuery('#add_photo_popup #find_photo_form,#add_photo_popup #upload_photo_form').hide();jQuery('#add_photo_popup').fadeIn();">Add Photo</a>
+</span>
+<span class="add_photo_span" >
+  <select id="time_span" class="float_l sort_options">
+    <option value="30day">Last 30 days</option>
+    <option value="30min">Last 30 mins</option>
+    <option value="day">Last day</option>
+    <option value="week">Last week</option>
+    <option value="year">Last year</option>
+  </select>
+  <span style="padding-top: 5px;float: left;">
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <a class="discussion_action_link sort_by_links" href="javascript:void(0);" onclick="set_sort_by('comments');">Sort by Most Comments</a>
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <a class="discussion_action_link sort_by_links" href="javascript:void(0);" onclick="set_sort_by('rates')">Sort by Most Rated</a>
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <a class="discussion_action_link sort_by_links" href="javascript:void(0);" onclick="set_sort_by('recent')">Sort by Recent</a>
+    <span class="link_seperator float_l">&nbsp;|&nbsp;</span>
+    <!-- Set sort by value -->
+    <input type="hidden" value="comments" name="sort_by" id="sort_by"/>
+  </span>
+  <span class="float_l">
+    <%= select("picture", "crowd_id", @login_user.groups.collect {|p| [ p.name, p.id ] }, {:prompt => 'Select Crowd'},:id=>"crowd_id",:class=>"sort_options") %>
+    <%= select("picture", "group_id", @login_user.all_public_private_groups.collect {|p| [ p.name, p.id ] }, {:prompt => 'Select Group'},:id=>"group_id",:class=>"sort_options") %>
+  </span>
+
+</span>
+<div class="photos_container">
+  <% if @pictures.blank? %><span class="no_photos_in_album">There are no photos available for you.</span><% end %>
+  <% @pictures.each do |a_p| %>
+    <%= render :partial=>"photo_block", :locals=>{:pic=>a_p} %>
+  <% end %>
+</div>
+<div class="photo_loader_div clear_both">
+  <img title="Loading" alt="Loading" src="/images/ajax-loader.gif"/>
+</div>
+<script type="text/javascript">
+  var added_from_site = false;
+  applyPhotoEffects();
+  jQuery(document).ready(function(){
+    jQuery(".photos_container").masonry( "reload" );
+
+    jQuery(".photos").hover(function(){
+      jQuery(this).find(".photo_actions").stop().show().animate({'height':'23px'},"fast");
+    },function(){
+      jQuery(this).find(".photo_actions").stop().animate({'height':'0px'},"fast",function(){jQuery(this).hide();});
+    });
+
+    jQuery("select.sort_options").selectmenu();
+
+  });
+
+  function applyPhotoEffects()
+  {
+    jQuery(".photos_container").masonry({
+      itemSelector: '.photos'
+    });
+  }
+
+  function display_image_full_detail(ap_id)
+  {
+    jQuery.get("/load_photo_full_detail/"+ap_id,function(data){
+      jQuery("body").append(data);
+    });
+  }
+</script>
+<%= render :partial=>"add_photo" %>
+<%= render :partial=>"remote_photos" %>
+<%= render :partial => "add_photo_from_system" %>
+<%= render "discussion_groups/fileupload/js_include_local" %>
+
+<script type="text/javascript">
+
+  var  finished = false,
+  loading = false;
+  (function() {
+    var page = 1,
+    finish = false;
+
+
+    function nearBottomOfPage() {
+      return ($(window).scrollTop() > $(document).height() - $(window).height() - 100) && ($(document).height() - $(window).height() - 100)>0;
+    }
+
+    function finish() {
+      finish = true;
+    }
+
+    $(window).scroll(function(){
+
+      if (loading) {
+        return;
+      }
+
+      if(nearBottomOfPage() && !finished) {
+        loading=true;
+        jQuery(".photo_loader_div").show();
+        page++;
+        var time_span = jQuery("#time_span").val();
+        var sort_by =  jQuery("#sort_by").val();
+        var group_id = jQuery("#group_id").val();
+        var crowd_id = jQuery("#crowd_id").val();
+        /*$.ajax({
+          url: '/load_photos_discussions/?page=' + page,
+          type: 'get',
+          dataType: 'script',
+          success: function() {
+            loading=false;
+            jQuery(".photo_loader_div").hide();
+          }
+        });*/
+        load_sorted_pictures(page);
+      }
+    });
+
+    if(!nearBottomOfPage())
+    {
+      jQuery(".photo_loader_div").hide();
+    }
+
+    jQuery("select.sort_options").change(function(){
+      page = 1;
+      load_sorted_pictures(page);
+      finished = false;
+    });
+
+    jQuery(".sort_by_links").click(function(){
+      page = 1;
+      load_sorted_pictures(page);
+      finished = false;
+    });
+
+  }());
+
+
+  function set_sort_by(value)
+  {
+    jQuery("#sort_by").val(value);
+    if(value=='recent')
+    {
+      jQuery("select.sort_options option:first").attr("selected","selected")
+      $('#time_span').selectmenu("value","30day");
+      jQuery("#group_id,#crowd_id").selectmenu("value","");
+    }
+
+  }
+
+  function load_sorted_pictures(page)
+  {
+    var time_span = jQuery("#time_span").val();
+    var sort_by =  jQuery("#sort_by").val();
+    var group_id = jQuery("#group_id").val();
+    var crowd_id = jQuery("#crowd_id").val();
+    $.ajax({
+      url: '/load_photos_discussions/?page=' + page+"&group_id="+group_id+"&crowd_id="+crowd_id+"&sort_by="+sort_by+"&time_span="+time_span,
+      type: 'get',
+      dataType: 'script',
+      success: function() {
+        loading=false;
+        jQuery(".photo_loader_div").hide();
+      }
+    });
+  }
+</script>

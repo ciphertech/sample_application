@@ -1,0 +1,3 @@
+var $new_link = jQuery("<%= escape_javascript(link_to 'Join Group', {:action => 'join_group', :id => @disc_group.id }, :remote=>true, :class => "join_group_d", :id => "join_group_#{@disc_group.id}").html_safe %>");
+jQuery("#unjoin_group_<%= @disc_group.id %>").replaceWith($new_link);
+is_sending = false;

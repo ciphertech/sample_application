@@ -1,0 +1,45 @@
+<!-- Photo starts here -->
+<% host_url = "http://"+request.host_with_port %>
+<div class="photos picture_<%= pic.id %>">
+  <div class="photo_actions">
+    <% if pic.album.user_id!=@login_user.id %>
+      <a href="javascript:void(0);" onclick="import_picture(<%= pic.id %>)" class="album_action_link float_l" >Import</a>
+    <% else %>
+      <a class="float_r album_action_link" href="javascript:void(0);">
+        <img title="Remove" style="width: 10px; height: 10px;" onclick="delete_picture(<%= pic.id %>);" src="/images/cross-icon.png" alt="Cross-icon"/>
+      </a>
+      <a id="share_with_group_link" class="album_action_link float_r" onclick="show_share_photo_in_group_popup(<%= pic.id %>);" href="javascript:void(0);">
+        <img width="13" height="10" title="Change Group" src="/images/group.png"/>
+      </a>
+    <% end %>
+  </div>
+  <div class="photo_pic_conatiner float_l">
+    <a href="javascript:void(0);" class="float_l" style="display:block; clear:both; width:192px;height:<%= pic.photo.height(:medium) %>px" onclick="display_image_full_detail(<%= pic.id %>);">
+
+      <img src="<%=host_url%><%= pic.photo(:medium) %>" class="photo_pic" style="min-height:<%= pic.photo.height(:medium) %>px" />
+    </a>
+    <!--<img src="/images/test_mage.jpg" class="photo_pic"/></a>-->
+    <span class="image_detail"><%= pic.photo_detail %> </span>
+    <%# if !pic.site_name.nil? %><!--span class="image_detail">Added from <a class="site_name" href="http://<%#=pic.site_name%>" target="_blank"><%#= pic.site_name %></a> </span--><%#end%>
+    <!--<span class="image_detail small_font">
+      <span class="pic_count_<%= pic.id %>" > <%= pic.average_ratings %></span> Rating | <span class="pic_comment_count_<%= pic.id %>" ><%= pic.comment_count %></span> Comments
+    </span>-->
+  </div>
+
+  <span class="photo_gold_star pic_count_<%= pic.id %>" ><span style=""><%= pic.average_ratings %></span></span>
+  <span class="comment_circle pic_comment_count_<%= pic.id %>" ><%=  pic.comment_count %></span>
+</div>
+<!-- Photo ends here -->
+<script type="text/javascript">
+  var added_from_site = false;
+  function show_share_photo_in_group_popup(pic_id)
+  {
+    jQuery.get("/share_photo_in_group/"+pic_id,function(data){
+      //alert(data);
+      jQuery("body").append(data);
+      //jQuery("#share_with_group_popup #tab_id").val(tab_id);
+      jQuery("#share_with_group_popup .pop_up").css({"position":"fixed","top":(jQuery(window).height()-jQuery("#share_with_group_popup .pop_up").height())/2+"px"});
+      jQuery("#share_with_group_popup .pop_up").css({"position":"fixed","left":(jQuery(window).width()-jQuery("#share_with_group_popup .pop_up").width())/2+"px"});
+    });
+  }
+</script>

@@ -1,0 +1,12 @@
+
+<% if @message=="Discussion posted sucessfully."  %>
+  jQuery('.no_disc_in_group').html('');
+  jQuery('#discussion_form input:text,#discussion_form input:file, #discussion_form textarea, #discussion_form input[name="photo_url"]').val('');
+  var $items = jQuery("<%= escape_javascript(render :partial => "simple_discussion_groups_block", :locals=>{:discussion=>@discussion}).html_safe %>");
+  jQuery(".discussions_container").prepend($items).masonry( 'appended', $items, true );
+  setTimeout('jQuery(".discussions_container").masonry( "reload" );',500);
+<% end %>
+display_flash_message("<%= escape_javascript(@message).html_safe %>");
+set_effects();
+
+is_sending = false;

@@ -1,0 +1,24 @@
+<div class="grey_overlay" id="discussion_attachment_prev_div" style="overflow-y:auto;">
+  <div class="pop_up" style="width: 555px; height: 655px;">
+    <div class="popup_inner_div">
+      <a href="javascript:void(0);" onclick="close_attachment();" class="popup_close_btn">&nbsp;</a>
+      <div class="popup_content" style="width: 500px; height: 600px;">
+        <span class="popup_heading">Attachment</span>
+
+        <a href="#" class="download_link">Download</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  function close_attachment()
+  {
+    if(last_popup != "")
+    {
+      jQuery("#"+last_popup).show();
+      last_popup = "";
+    }
+    jQuery("#discussion_attachment_prev_div").hide();
+    jQuery("#discussion_attachment_prev_div iframe").remove();
+  }
+</script>

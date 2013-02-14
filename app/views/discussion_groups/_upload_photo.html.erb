@@ -1,0 +1,226 @@
+ <%= form_for :discussion, :url=>{:controller=>:discussions, :action => 'create_multiple_discussion'}, :html => {:multipart => true, :id=>"fileupload"} do |f|  %>
+<div class="grey_overlay" id="upload_photo_popup">
+  <div class="upload_pop_up" >
+    <div class="popup_inner_div">
+      <a href="/discussions/return_to_previous/1" onclick="jQuery('#upload_photo_popup').hide();cur_popup.show();" class="popup_close_btn">&nbsp;</a>
+      <div id="upload_div" class="upload_popup_content">
+        <span class="popup_heading">Upload Photo</span><br/><br/>
+        <div id="find_photo_form" class="photo_form" style="display: block;">
+        <%= hidden_field_tag 'discussion[discussion_type]', 'attachment' %>
+        <%= hidden_field_tag 'multi_upload', 'multiple' %>
+        <input type="hidden" name="posted_to" value="<%= params[:id] %>"/>
+        <input type="hidden" id="discussion_id" name="discussion_id" value=""/>
+        <input type="hidden" id="parent_id" name="parent_id" value=""/>
+
+        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
+        <div class="row fileupload-buttonbar">
+            <div class="span7">
+                <!-- The fileinput-button span is used to style the file input field as button -->
+                <span class="btn btn-success fileinput-button">
+                    <i class="icon-plus icon-white"></i>
+                    <span><%= t('fileupload.add_files') %></span>
+                    <%#= f.file_field :path %>
+		    <input id="picture_path" name="picture[path]" type="file" multiple/>
+                </span>
+                <button type="submit" class="btn btn-primary start">
+                    <i class="icon-upload icon-white"></i>
+                    <span>Start Upload<%#= t('fileupload.start_upload') %></span>
+                </button>
+                <button type="reset" class="btn btn-warning cancel">
+                    <i class="icon-ban-circle icon-white"></i>
+                    <span><%= t('fileupload.cancel_upload') %></span>
+                </button>
+                <!--button type="button" class="btn btn-danger delete">
+                    <i class="icon-trash icon-white"></i>
+                    <span><%#= t('fileupload.delete_multi') %></span>
+                </button>
+                <input type="checkbox" class="toggle"-->
+            </div>
+           
+        </div>
+
+
+        <!-- The loading indicator is shown during image processing -->
+        <div class="fileupload-loading"></div>
+        <br/>
+        <!-- The table listing the files available for upload/download -->
+        <table class="table table-striped"><tbody class="files" data-toggle="modal-gallery" data-target="#modal-gallery"></tbody>
+        </table>
+
+<%= render "discussion_groups/fileupload/queue" %>
+
+<%= render "discussion_groups/fileupload/index" %>
+
+<%#= render "discussion_groups/fileupload/js_include_local" %>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <% end %>
+
+
+<script>
+  var fileUploadErrors = {
+    maxFileSize: 'File is too big',
+    minFileSize: 'File is too small',
+    acceptFileTypes: 'Filetype not allowed',
+    maxNumberOfFiles: 'Max number of files exceeded',
+    uploadedBytes: 'Uploaded bytes exceed file size',
+    emptyResult: 'Empty file upload result'
+  };
+
+</script>
+
+
+<style>
+.close_pop_btn{
+	position: absolute;
+	top: 38px;
+	left: 123px;
+	background:url(/images/popup_close_btn.png) no-repeat;
+	border:none;
+	cursor:pointer;
+}
+.cancel_text{
+	width:20px;
+	opacity:0;
+}
+.image_block{
+	position:relative;
+}
+.template-upload{
+	margin:5px 5px;
+}
+.template-upload input[type="text"]{
+	height:20px;
+	width:140px;
+}
+.template-upload textarea{
+	height:50px;
+	width:140px;
+}
+.fade_align{
+	height:150px;
+	display:block;
+	width: 150px;
+	border:1px solid #ccc;
+	margine:5px;
+}
+.cancel_x{
+	position:absolute;
+}
+</style>
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    jQuery("#upload_photo_popup .upload_pop_up").css({"position":"fixed","top":(jQuery(window).height()-jQuery("#upload_photo_popup .upload_pop_up").height())/2+"px"});
+    jQuery("#upload_photo_popup .upload_pop_up").css({"position":"fixed","left":(jQuery(window).width()-jQuery("#upload_photo_popup .upload_pop_up").width())/2+"px"});
+    jQuery("#discussion_id").val(jQuery("#dis_id").val());
+    });
+  var url="";
+  function check_photo_url(mode)
+  {
+    jQuery(".form_error").html("");
+    var url ="";
+    if(mode=="prev")
+    {
+      url = jQuery("#site_url_prev").val();
+      if(url !="" && !url.match(/^(ht|f)tps?:\/\//))
+      {
+        url = "http://"+url;
+        jQuery("#site_url_prev").val(url);
+
+      }
+    }
+    else
+    {
+      url= jQuery("#photos_site_url").val();
+      if(url !="" && !url.match(/^(ht|f)tps?:\/\//))
+      {
+        url = "http://"+url;
+        jQuery("#photos_site_url").val(url);
+
+      }
+    }
+    var decode_url = url;
+    var flag = true;
+    var tabRegExp = /^(http|https):\/\/[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/;
+    if(jQuery.trim(url).length==0)
+    {
+      flag = false;
+      jQuery(".siteurlError").html("Please enter site url.");
+    }
+    else
+    {
+      if(!url.match(tabRegExp))
+      {
+        flag = false;
+        jQuery(".siteurlError").html("Please enter valid site url.");
+      }
+    }
+    if(flag)
+    {
+      toggle_ajax_loader();
+      var original_url = url;
+      url = encodeURIComponent(url);
+      jQuery.get("<%= url_for :controller=>:albums,:action => 'find_photo',:only_path => false %>?site_url="+url,function(data){
+
+        $rem_html = jQuery(data);
+        var is_found = false;
+        jQuery("#upload_photo_popup").fadeOut(function(){
+          $images= jQuery("<div class='rem_ph_div'></div>");
+          $rem_html.find("img").each(function(v,i){
+            if(jQuery(this).attr("src") != undefined)
+            {
+              var newImg = new Image();
+
+              $image = jQuery("<img src='"+jQuery(this).attr('src')+"' />")
+              if((!jQuery(this).attr("src").match("http://")) && !jQuery(this).attr("src").match("data:image"))
+              {
+                var l= decode_url;
+                l = l.substr(0,l.indexOf("/",10));
+                l = l=="" ? decode_url+"/" : l;
+                src_n = $image.attr("src")
+                src_n = src_n.replace('..',"");
+                src_n = src_n.match("^/") ? src_n : "/"+src_n;
+                $image.attr("src",l+src_n);
+              }
+              if(decode_url.match("http://www.google.co.in") || jQuery.browser.safari || jQuery.browser.opera)
+              {
+                $images.append($image);
+                is_found = true;
+              }
+              else
+              {
+                  $images.append($image);
+                  is_found = true;
+              }
+            }
+
+          });
+          toggle_ajax_loader();
+          if(is_found)
+          {
+
+            jQuery("#show_remote_photos div.rem_ph_div").replaceWith($images);
+            jQuery("#show_remote_photos div.rem_ph_div img:first").addClass("current");
+            jQuery("#photo_url_field").val(jQuery("#show_remote_photos div.rem_ph_div img:first").attr('src'));
+            jQuery("#site_url_prev ,#site_url_for_sitename").val(original_url);
+            jQuery("#add_remote_phot_submit").val("Add");
+            jQuery("#show_remote_photos").fadeIn();
+          }
+          else
+          {
+            display_flash_message("No useful image found.");
+          }
+        });
+      });
+    }
+    return false;
+  }
+
+
+</script>

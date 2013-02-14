@@ -1,0 +1,17 @@
+<div class="clear_both d_group_table_div">
+  <table>
+    <% if @login_user.discussion_group_users.empty? %>
+      <tr>
+        <td colspan="2">You have no groups</td>
+      </tr>
+    <% else %>
+      <% @login_user.discussion_group_users.each do |grp|  %>
+        <tr>
+          <td><input class="posting_group" name="posted_to_groups[]" type="checkbox" id="group_<%= grp.discussion_group.id %>" value="<%= grp.discussion_group.id   %>" /> </td>
+          <td><span class="grp_name"><%= grp.discussion_group.name %></span> </td>
+        </tr>
+      <% end %>
+    <% end %>
+  </table>
+  <span class="error clear_both" id="group_id_error"></span>
+</div>

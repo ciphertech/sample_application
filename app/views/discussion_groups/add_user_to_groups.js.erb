@@ -1,0 +1,9 @@
+//alert('<%#= @discussion_group.id %>');
+<% if @added %>
+  var $output_html = jQuery("<%= escape_javascript(render :partial => "private_group_added_users" ,:locals=>{:group => @discussion_group}).html_safe %>");
+  jQuery("#private_group_nsu").html($output_html);
+  jQuery("#private_group_user").hide();
+  jQuery("#edit_add_user_popup").remove();
+<% end %>
+display_flash_message("<%= escape_javascript(@notice).html_safe %>");
+is_sending = false;

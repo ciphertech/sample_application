@@ -1,0 +1,24 @@
+<% if @message=="Discussion posted successfully."  %>
+  <% if @current_page %>
+
+    jQuery("#discussion_title").val('');
+    jQuery("#discussion_discussion").val('');
+    jQuery('#discussion_form input:text,#discussion_form input:file, #discussion_form textarea, #discussion_form input[name="photo_url"]').val('');
+    var $items = jQuery("<%= escape_javascript(render :partial => "discussions/simple_discussion_block", :locals=>{:discussion=>@lastest_discussion}).html_safe %>");
+    jQuery(".normal_url_block .d_inner_div").prepend($items)
+    apply_ratings();
+  <% else %>
+    jQuery(".no_disc_in_group").html('');
+    jQuery('#discussion_form input:text,#discussion_form input:file, #discussion_form textarea, #discussion_form input[name="photo_url"]').val('');
+    var $items = jQuery("<%= escape_javascript(render :partial => "discussion_groups/simple_discussion_groups_block", :locals=>{:discussion=>@lastest_discussion}).html_safe %>");
+    jQuery("#result").prepend($items).masonry( 'appended', $items, true );
+    setTimeout('jQuery("#result").masonry( "reload" );',500);
+  <% end %>
+<% end %>
+  display_flash_message("<%= escape_javascript(@message).html_safe %>");
+
+
+jQuery(".dis_attachment_container").html("");
+set_effects();
+
+is_sending = false;

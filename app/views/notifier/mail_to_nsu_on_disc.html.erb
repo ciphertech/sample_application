@@ -1,0 +1,13 @@
+<p>Here is the post from <%= @username %>:</p> 
+<% if @discussion.discussion_type == "URL" %>
+  <a href="<%= @discussion.discussion %>"><%= @discussion.site_title %></a>
+<% else %>
+  <%= @discussion.discussion %>
+<% end %>
+<% if !User.where(:email=>@nsgu).present? %>
+  <p><a href="<%= @signup_link %>">Sign up</a> to join the discussion.</p>
+<% else %>
+  <p><a href="<%= @url %>">Sign in</a> to join the discussion.</p>
+<% end %>
+<br/>
+<%= show_discussion_button(@host, @discussion.id).html_safe %>

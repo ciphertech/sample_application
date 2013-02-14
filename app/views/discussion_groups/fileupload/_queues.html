@@ -1,0 +1,39 @@
+
+<!-- The template to display files available for upload -->
+<script id="template-upload" type="text/x-tmpl">
+{% for (var i=0, file; file=o.files[i]; i++) { %}
+    <div class="template-upload fade" style="float:left;margin:5px 0;">
+	<div class="image_block">
+        <span class="preview"><span class="fade fade_align"></span></span>
+	<span class="cancel">{% if (!i) { %}
+            <button class="close_pop_btn">
+                <i class="icon-ban-circle icon-white"></i>
+                <span class="cancel_text">{%=locale.fileupload.cancel%}</span>
+            </button>
+        {% } %}</span></div>
+
+<br>
+	 <span> <textarea></textarea></span>
+        {% if (file.error) { %}
+            <td class="error" colspan="2"><span class="label label-important">{%=locale.fileupload.error%}</span> {%=locale.fileupload.errors[file.error] || file.error%}</td>
+        {% } else if (o.files.valid && !i) { %}
+            
+        {% } else { %}
+            <td colspan="2"></td>
+        {% } %}
+        <span class="cancel">{% if (!i) { %}
+           
+        {% } %}</span>
+    </div>
+{% } %}
+</script>
+<style>
+.close_pop_btn {
+position: absolute;
+top: 0 !important;
+left: 123px;
+background: url(/images/popup_close_btn.png) no-repeat;
+border: none;
+cursor: pointer;
+}
+</style>

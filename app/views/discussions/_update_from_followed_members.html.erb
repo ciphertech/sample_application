@@ -1,0 +1,95 @@
+<script type="text/javascript" src="/javascripts/pictures.js"></script>
+<script type="text/javascript" src="/javascripts/jquery.ui.selectmenu.js"></script>
+<link type="text/css" rel="stylesheet" media="screen" href="/stylesheets/jquery.ui.selectmenu.css"></link>
+<style>
+  body {font-size: 11px ; font-family:"Verdana",sans-serif; }
+  fieldset { border:0; }
+  label,select,.ui-select-menu { float: left; margin-right: 10px; }
+  select { width: 148px; }
+  .wrap ul.ui-selectmenu-menu-popup li a { font-weight: bold; }
+</style>
+
+<div class="discussion_header" align="left">
+  <div class="yellow_header padding_left_ten"><span class="float_l">Updates From Followed Members</span>
+    <span class="discussion_sorting_div">
+      <select id="discussion_sorting_by_group" name="group[sorting]" class="float_l">
+        <option value="0">Select a group</option>
+        <% if !@groups.blank? %>
+          <% @groups.each do |group| %>
+            <option value="<%= group.id %>"><%= group.name %></option>
+          <% end %>
+        <% end %>
+      </select>
+      <script type="text/javascript">
+        jQuery("#discussion_sorting_by_group").selectmenu();
+      </script>
+    </span>
+  </div>
+</div>
+<div class=" feeds_block" style="height: 390px;">
+  <div class="d_inner_div float_l" id="feed_result">
+    <%= render :partial=>"feeds", :locals=>{:feeds => @feeds} %>
+  </div>
+  <div class="loader_div" id="feeds_loader">
+    <img title="Loading" alt="Loading" src="/images/ajax-loader.gif"/>
+  </div>
+</div>
+
+<script type="text/javascript">
+  (function() {
+    var feed_page = 1,
+    loading = false,
+    feed_finish = false;
+
+    function nearBottomOfPage_most_pop_d()
+    {
+      //console.log((jQuery(".feeds_block").scrollTop() > jQuery(".feeds_block .d_inner_div").height() - jQuery(".feeds_block").height()-10) && (jQuery(".feeds_block .d_inner_div").height() - jQuery(".feeds_block").height())>0);
+      //return (jQuery(".feeds_block").scrollTop() > jQuery(".feeds_block .d_inner_div").height() - jQuery(".feeds_block").height()-10) && (jQuery(".feeds_block .d_inner_div").height() - jQuery(".feeds_block").height())>0;
+      return ($(window).scrollTop() > $(document).height() - $(window).height() - 100) && ($(document).height() - $(window).height() - 100)>0;
+    }
+
+    function feed_finish() {
+      feed_finish = true;
+    }
+
+    jQuery(document).scroll(function(){
+      if (loading) {
+        return;
+      }
+      if(nearBottomOfPage_most_pop_d() && !feed_finish) {
+        loading=true;
+        jQuery("#feeds_loader").show();
+        feed_page++;
+        jQuery.ajax({
+          url: '/load_more_feeds/?page=' + feed_page+"&?group_id="+jQuery("#discussion_sorting_by_group").val(),
+          type: 'get',
+          dataType: 'script',
+          success: function(data) {
+            loading=false;
+            jQuery("#feeds_loader").hide();
+          }
+        });
+      }
+    });
+
+    jQuery("#discussion_sorting_by_group").change(function(){
+      var current_value = jQuery("#discussion_sorting_by_group").val();
+
+      jQuery.get("load_feeds_by_group/"+current_value,function(data){
+        feed_page = 1;
+        finished = false;
+        jQuery("#feed_result").html(data);
+        set_effects();
+      });
+    });
+
+  }());
+
+</script>
+
+
+
+
+
+
+

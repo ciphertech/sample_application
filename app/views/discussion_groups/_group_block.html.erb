@@ -1,0 +1,16 @@
+<div class="albums" id="disc_group_block_<%= disc_group.id %>">
+  <a class="album_name" href="/discussion_groups/<%= disc_group.id %>"><div id="group_disc_name_edit_<%= disc_group.id %>"><%= disc_group.name %></div></a>
+  <a class="album_prev" href="/discussion_groups/<%= disc_group.id %>">
+    <% disc_group.group_users.limit(9).each do |dgu| %>
+      <img class="medium_user_image" title="<%= dgu.user.username %>"src="<%= dgu.user.profile_pic(:medium) %>" />
+    <%end%>
+  </a>
+  <div class="album_actions">
+    <% if disc_group.user.id == @login_user.id %>
+      <a href="javascript:void(0);" class="album_action_link float_l" onclick='edit_group_disc(<%= disc_group.id  %>);'>Edit</a>
+      <%= link_to image_tag('cross-icon.png?1326521089', :title=>"Remove", :style=>"width: 10px; height: 10px;"), {:controller=>'discussion_groups', :action=>'delete_discussion_group', :id=> disc_group.id}, :confirm=>"Are you sure you want to delete?", :class=>"float_r disc_group_action_link", :id => "remove_group", :remote => true %>
+    <% else %>
+      <%=  link_to 'Leave Group', {:action => 'leave_joined_group', :id => disc_group.id }, :confirm=>"Are you sure you want to unjoin the #{disc_group.name} group", :remote=>true, :class => "album_action_link float_l", :id => "unjoin_group_#{disc_group.id}" %>
+    <% end %>
+  </div>
+</div>

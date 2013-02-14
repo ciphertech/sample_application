@@ -1,0 +1,7 @@
+<% if @emails.nil? %>
+  display_flash_message("Please select emails to add.");
+<% elsif @added %>
+  window.location = "/users/manage_groups";
+<% else %>
+  display_flash_message("<%= @notice.html_safe %>");
+<% end %>

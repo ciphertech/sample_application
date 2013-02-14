@@ -1,0 +1,27 @@
+<div class="srch_grps" id="">
+  <div class="grp_prev_div">
+    <a class="grp_name" href="/discussion_groups/<%= group.id %>"><div id="album_name_edit_<%= group.id %>"><%= group.name %></div></a>
+    <a class="grp_prev" href="/discussion_groups/<%= group.id %>">
+      <% group.group_users.limit(9).each do |dgu| %>
+        <img class="album_prev_thumb" title="<%= dgu.user.username %>" src="<%= dgu.user.profile_pic(:medium) %>" />
+      <%end%>
+    </a>
+
+  </div>
+  <div class="serch_grp_desc_div">
+    <span class="grp_desc_head">Description</span>
+    <pre class="group_desc">
+      <%= group.description %>
+    </pre>
+    <div>
+      <% unless group.user_id == @login_user.id %>
+        <% if @login_user.is_member_of_discussion_group(group.id) %>
+          <%=  link_to 'Leave Group', {:action => 'unjoin_group', :id => group.id }, :remote=>true, :class => "join_group_d", :id => "unjoin_group_#{group.id}" %>
+        <% else %>
+          <%=  link_to 'Join Group', {:action => 'join_group', :id => group.id }, :remote=>true, :class => "join_group_d", :id => "join_group_#{group.id}" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>
+

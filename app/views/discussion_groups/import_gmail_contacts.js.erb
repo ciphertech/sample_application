@@ -1,0 +1,10 @@
+  jQuery("#ajax_loader").hide();
+<% if @contacts %>
+  var $html = jQuery("<%= escape_javascript(render :partial => "gmail_contacts", :locals=>{:contacts=>@contacts}).html_safe %>");
+  jQuery("#gmail_cont_list").html($html);
+  jQuery("#gmail_cont_form, #gmail_cont_list").toggle();
+  jQuery("#import_gmail_cont_popup .pop_up").css({height:'390px'});
+  jQuery(".pop_up").center();
+<% else %>
+  display_flash_message("<%= @message %>");
+<% end %>

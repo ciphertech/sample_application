@@ -1,0 +1,115 @@
+<script type="text/javascript" src="/javascripts/jquery.form.js"></script>
+<script type="text/javascript" src="/javascripts/discussion.js"></script>
+<script type="text/javascript" src="/javascripts/jquery.ui.selectmenu.js"></script>
+<link type="text/css" rel="stylesheet" media="screen" href="/stylesheets/jquery.ui.selectmenu.css"></link>
+<script type="text/javascript">
+  var pic_form = null;
+</script>
+<style>
+  body {font-size: 11px ; font-family:"Verdana",sans-serif; }
+  fieldset { border:0; }
+  .ui-selectmenu-status {text-align: left;}
+  label,select,.ui-select-menu { float: left; margin-right: 10px; }
+  select { width: 150px; }
+  .wrap ul.ui-selectmenu-menu-popup li a { font-weight: bold; }
+</style>
+<div class="discussion_header" align="left">
+  <span class="red_header padding_left_ten">Start a Discussion</span>
+</div>
+<div class="grp_disc_form_wrpr">
+  <%= form_for :discussion, :url=>{:controller=>:discussions, :action => 'create_discussion'}, :html => {:multipart => true, :id=>"discussion_form"} do |f|  %>
+    <span id="disc_type" class="clear_both  hidden_element discussion_frm_heading">Title:
+      <span class="error clear_both"></span>
+      <%= text_field 'discussion', 'title', {:class=>"discussion_title", :style=>"width: 400px;margin-left:8px;", :maxlength=>"150",} %>
+      <span class="error title_error"></span>
+    </span>
+    <span class="error clear_both"></span>
+    <span id="disc_type_text" class="clear_both discussion_frm_heading">URL:</span>
+    <%= text_area 'discussion', 'discussion', {:class=>"discussion_discussion flaot_l", :style=>"width: 400px;height: 40px;margin-left:8px;"} %>
+    <span id="urlError" class="error url_error"></span>
+    <span id="disc_type_file" class="clear_both hidden_element discussion_frm_heading ">
+      <span class="picture_options_span hidden_element">
+        <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#upload_photo_popup').show();pic_form=jQuery(this).closest('form');">Upload Picture</a>
+        <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#add_photo_popup').show();pic_form=jQuery(this).closest('form');">Find Picture</a>
+      </span>
+      <span class="upld_pic_span clear_both" style="margin-left:8px;">
+        File: <%= file_field 'discussions', 'attachment', {:class => "discussion_attachment_file"} %>
+        <input type="hidden" name="is_uploaded" id="is_uploaded" value="true"/>
+        <input type="hidden" name="photo_url" value=""/>
+        <input type="hidden" name="added_from" value=""/>
+      </span>
+      <span class="error file_error"></span>
+    </span>
+    <span class="error clear_both"></span>
+
+
+    <span class="grp_disc_radios clear_both" style="padding-top: 0px;">
+      <div class="float_l">
+        <span class="clear_both discussion_frm_heading">Discussion Type</span>
+        <div class="discussion_type_div">
+          <select id="discussion_type" name="discussion[discussion_type]" class="float_l">
+            <option value="URL">URL</option>
+            <option value="Comment/Question">Comment/Question</option>
+            <option value="Document">Document</option>
+            <option value="Picture">Picture</option>
+          </select>
+        </div>
+        <script type="text/javascript">
+          jQuery("#discussion_type").selectmenu();
+        </script>
+      </div>
+      <div class="float_l" style="padding-left: 20px;">
+        <span class="clear_both discussion_frm_heading" style="margin-bottom: 4px;">Discuss with</span>
+        <input type="radio" checked id="discuss_with_all_user" name="discussion[share_type]" value="public" onclick="jQuery('.d_group_box').hide();" /><label for="share_type">All User</label>
+        <input type="radio" id="discuss_with_group" name="discussion[share_type]" value="groups" onclick="jQuery('.d_group_box').show();" /><label for="share_type">Groups/Crowds</label>
+      </div>
+
+      <div class="d_group_box clear_both hidden_element" align="left">
+        <strong class="clear_both discussion_frm_heading">Select groups</strong>
+        <%= render :partial => 'load_groups' %>
+      </div>
+
+      <div class="d_group_box clear_both hidden_element" align="left">
+        <strong class="clear_both discussion_frm_heading">Select crowds</strong>
+        <%= render :partial => 'load_crowds' %>
+      </div>
+      <div class="padding_top_six dis_attachment_container clear_both" align="left"></div>
+    </span>
+    <input type="submit" class="blue_btn float_l clear_both" style="margin-left:8px;" value="Discuss" onclick="return check_url(jQuery(this))"/>
+  <% end %>
+</div>
+<%= render :partial=>"discussion_groups/upload_photo" %>
+<%= render :partial=>"discussion_groups/add_photo" %>
+<%= render :partial=>"discussion_groups/remote_photos" %>
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    set_effects();
+
+    /*  jQuery(".add_attachment_link").click(function(){
+      var $attchment = jQuery("#attchment_content .attachment").clone();
+      $attchment.find(".error").html("");
+      jQuery(".dis_attachment_container").append($attchment);
+    });*/
+
+    /*jQuery(".remove_attachment").live("click",function(){
+      jQuery(this).closest(".attachment").remove();
+    });*/
+    set_discussion_form(jQuery('#discussion_type'));
+    jQuery('#discussion_form').ajaxForm(function() {
+      //nothing
+    });
+    
+    if(jQuery("#discuss_with_group").is(":checked"))
+    {
+      jQuery('.d_group_box').show();
+    }
+
+    jQuery('#discussion_type').change(function(){
+      jQuery(".error").html("");
+      set_discussion_form(jQuery(this));
+    });
+    
+  });
+  
+  
+</script>

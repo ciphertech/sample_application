@@ -1,0 +1,7 @@
+
+jQuery("#non_site_add_to_crowd_popup").fadeOut().remove();
+<% @created_g_u.each do |g_u| %>
+  var $output_html = ("<%= escape_javascript(render :partial => "non_site_crowd_user", :locals=>{:g_u=>g_u}).html_safe %>");
+  jQuery("#group_<%= g_u.invitable_id %> .group_users_container").append($output_html);
+<% end %>
+display_flash_message("<%= @notice %>");

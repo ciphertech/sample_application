@@ -1,0 +1,40 @@
+<%= javascript_include_tag 'jquery-1.7.1.js' %>
+<% if @url_body.nil?  %>
+  No content available for discussion.
+<% else %>
+  <% disc = URI.parse(@discussion.discussion).host %>
+  <script type="text/javascript">
+    $(document).ready(function(){
+      
+      var regEx = /^(ht|f)tps?:\/\//;
+      $("img").each(function(){
+        $this  = $(this);
+        if(!$this.attr("src").match(regEx))
+        {
+          $this.attr("src","http://<%= disc %>"+$this.attr('src'))
+
+        }
+      })
+      $("link").each(function(){
+        $this  = $(this);
+        if(!$this.attr("href").match(regEx))
+        {
+          $this.attr("href","http://<%= disc %>"+$this.attr("href"))
+        }
+
+      })
+      $("body").removeAttr("cool");
+      $("script").each(function(){
+        $this  = $(this);
+        if($this.attr('src')!='' && !$this.attr("src").match(regEx))
+        {
+          $this.attr("src","http://<%= disc %>"+$this.attr('src'));
+        }
+      })
+
+    })
+
+  </script>
+  
+  <%= @url_body.html_safe %>
+<% end %>

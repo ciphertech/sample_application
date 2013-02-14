@@ -1,0 +1,198 @@
+
+<div class="grey_overlay" id="show_discussion_popup" style="display: block;overflow-y:auto;">
+
+
+  <div class="popup_content discussion_full_detail_popup_c" style="width: 885px;left: 20px;min-height: 500px;">
+    <div class="clear_both ph_det_close_div">
+      <a href="javascript:void(0);" onclick="jQuery('#show_discussion_popup').fadeOut().remove();jQuery('body').css({'overflow':'auto'});" class="popup_close_btn">&nbsp;</a>
+    </div>
+    <div class="photo_det_user_det_div" style="display: none;">
+
+    </div>
+    <div class="photo_detail_pic_container">
+      <div align="center" class="photo_detail_pic_td">
+        <!-- main url start here -->
+        <div class="url_comments_wrapper discussion_<%= discussion.id %> ">
+
+          <!-- Url start here -->
+          <div class="urls_div root_div">
+
+            <div class="float_l">
+              <% if discussion.discussion_type == "URL"  %>
+                <a href="<%=discussion.discussion%>" target="_blank" class="discus_web_url_link discussion_ext_link" ><%= discussion.site_title %></a>
+                <div class="clear_both">
+                  <a href="/discussions/web_content/<%= discussion.id %>" target="_blank" class="d_url_link" >Open Local Content</a>
+                </div>
+              <% elsif discussion.discussion_type == "Picture" %>
+                <% pic = discussion.images.present? ? discussion.images[0] : nil%>
+                <div>
+                  <span class="discussion_text discuss_title_pic_text"><%= discussion.title %></span>
+                </div>
+                <div class="photo_detail_pic_container">
+
+                  <div align="center" class="photo_detail_pic_td">
+                    <% if pic.site_url.present? %>
+                      <a target="_blank" href="<%= pic.site_url %>" ><img src="<%= pic.photo(:original) %>" class="photo_full_pic" /></a>
+                    <% else %>
+                      <img src="<%= pic.photo(:original) %>" class="photo_full_pic" />
+                    <% end %>
+                  </div>
+                  <div>
+                    <span class="image_detail"><%= discussion.discussion%> </span>
+                  </div>
+                </div>
+              <% else %>
+                <span class="discussion_text" style="font-weight: bold;"><%= discussion.title %></span>
+                <span class="discussion_text"><%=discussion.discussion%></span>
+              <% end %>
+              <% d_group = discussion.discussion_groups  %>
+              <% if !d_group.blank? %>
+                <div class="float_l padding_five clear_both" style="font-weight: bold;font-size: 12px;" >
+                  Posted in <a class="action_link" href="/discussion_groups/<%= d_group[0].id %>"><%= d_group[0].name %></a>  &nbsp;group.
+                </div>
+              <% end %>
+              <div><%= render :partial=> "discussions/rating_partial", :locals=>{:rating_for => discussion, :section => 'popular'} %></div>
+              <div>
+                <span class="image_detail small_font">
+                  <span class="" ><span class="discussion_comm_count_<%= discussion.id %>"><%=  discussion.all_comments_count(discussion.id) %></span></span> Comments
+                </span>
+                <span class="image_detail small_font"></span>
+              </div>
+              <div class="post_comment_div">
+                <span class="clear_both delete_discussion_div">
+                  <% if @login_user.is_admin? %>
+                                                <!--<a href="javascript:void(0);" class="discussion_action_link" onclick="delete_discussion(<%= discussion.id %>,jQuery(this))">Delete</a>-->
+                  <% else %>
+                    <a class="discussion_action_link comment_link " href="javascript:void(0);">Post Comment</a>
+                  <% end %>
+                  <% if discussion.comments.count>0 %>
+                    <span class="discussion_action_link">&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;</span>
+                    <a class="discussion_action_link toggle_comment_tree " onclick="expand_comment_tree_from_start();" href="javascript:void(0);">Expand All Comments</a>
+                  <% end %>
+                </span>
+                <% unless @login_user.is_admin? %>
+                  <div class="comment_form_div">
+                    <% form_for :comment, :url=>{:controller=>:discussions, :action => 'post_comments'},:html=>{:class=>"comment_forms",:id=>"comment_"+discussion.id.to_s,:multipart => true}, :remote=>true do |f|  %>
+                      <select class="comment_type" name="comment[comment_type]" onchange="set_comment_type($(this))">
+                        <option value="URL">URL</option>
+                        <option value="Comment/Question">Comment/Question</option>
+                        <option value="Document">Document</option>
+                        <option value="Picture">Picture</option>
+                      </select>
+                      <span class="com_title clear_both discussion_frm_heading">Title:</span>
+                      <%= text_field 'comment','title', :class=>"float_l comment_title_field",:style=>"width:285px;" ,:maxlength=>"150"%>
+                      <span class="error title_error clear_both float_l"></span>
+                      <span class="com_Description clear_both discussion_frm_heading">URL:</span>
+                      <%= text_area 'comment', 'comment', :class=>"post_comment_text_area float_l clear_both"%>
+                      <span class="error url_error clear_both float_l"></span>
+                      <span id="disc_type_file" class="clear_both hidden_element discussion_frm_heading ">
+                        <span class="picture_options_span hidden_element">
+                          <a class="pic_options" href="javascript:void(0);" onclick="jQuery(this).closest('#disc_type_file').find('.upld_pic_span').hide();jQuery('#upload_photo_popup').show();pic_form=jQuery(this).closest('form');jQuery('#show_discussion_popup').hide();">Upload Picture</a>
+                          <a class="pic_options" href="javascript:void(0);" onclick="show_find_photo_for_comment(jQuery(this));">Find Picture</a>
+                        </span>
+                        <span class="upld_pic_span clear_both">
+                          <input type="file" name="com_file" class="com_file clear_both" />
+                          <input type="hidden" name="is_uploaded" id="is_uploaded" value="true"/>
+                          <input type="hidden" name="photo_url" value=""/>
+                          <input type="hidden" name="added_from" value=""/>
+                        </span>
+                        <span class="error file_error clear_both float_l"></span>
+                      </span>
+                      <span class="clear_both">&nbsp;&nbsp;&nbsp;</span>
+                      <%= hidden_field 'comment','discussion_id', :value=>discussion.id, :id=>"dis_id"%>
+                      <a class="blue_btn clear_both float_l padding_top_six" onclick='post_comment(jQuery(this));' id="post_discussion_comment" href="javascript:void(0);">Post Comment</a>
+                    <% end %>
+                    <a class="action_link no_text_deco float_l cancel_link comman_cancel_link" href="javascript:void(0);">Cancel</a>
+                  </div>
+                <% end %>
+              </div>
+
+              <div style="display: block;padding: 20px 0 10px;width: 600px;overflow-x:auto;" class="comments_div main_comment_div">
+                <% discussion.comments.where('Parent_id is Null').order('created_at DESC').each do |comment| %>
+                  <%= render :partial => "discussions/outer_comment", :locals=>{:comment=>comment} %>
+                <% end %>
+              </div>
+            </div>
+            <!-- Url ends here -->
+          </div>
+          <!-- main url end here -->
+        </div>
+      </div>
+    </div>
+    <div class="photos_likers_container discussion_raters_<%= discussion.id %>">
+      <span class="clear_both black_bold"><b>Rated by</b></span>
+      <% discussion.raters.each do |l| %>
+        <a href="<%= l.profile_path %>" class="liker_<%= l.id %>">
+          <img src="<%= l.profile_pic(:small) %>" class="small_user_image float_l" title="<%= l.username %>" />
+        </a>
+      <% end if !discussion.raters.blank?%>
+    </div>
+
+  </div>
+</div>
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    set_effects();
+    set_comment_form();
+  });
+</script>
+<%= render :partial=>"discussion_groups/upload_photo" %>
+<script type="text/javascript">
+
+  jQuery("body").css({'overflow':'hidden'});
+  jQuery(document).ready(function(){
+    /*
+    if(jQuery("#show_discussion_popup .popup_content").height()<jQuery(window).height()/2)
+    {
+      jQuery("#show_discussion_popup .popup_content").css({"position":"fixed","top":(jQuery(window).height()-jQuery("#show_discussion_popup .popup_content").height())/2+"px"});
+    }
+     */
+    jQuery("#show_discussion_popup .popup_content").css({"position":"absolute","left":(jQuery(window).width()-jQuery("#show_discussion_popup .popup_content").width())/2+"px"});
+    
+    jQuery("#show_discussion_popup").find('.rating_class').raty({
+      click: function(score, evt) {
+        current_object = jQuery(this);
+        $(this).parent().submit();
+      }
+    });
+
+
+    jQuery("#show_discussion_popup").find(".rating_container").each(function(v,i){
+      var value = jQuery(this).children("span").html();
+      jQuery(this).children('.rating_class_fixed').raty({
+        readOnly: true,
+        start:	value
+      });
+    });
+
+  });
+
+</script>
+<script type="text/javascript">
+  function expand_comment_tree_from_start()
+  {
+    if(jQuery(".toggle_comment_tree").html()=="Expand All Comments")
+    {
+      jQuery("#show_discussion_popup .comments_div").show().css("padding-left","10px");
+      jQuery(".main_comment_div").css("padding-left","0px");
+      jQuery("#show_discussion_popup .expand_btn").addClass("collapse_btn").removeClass("expand_btn");
+      jQuery(".toggle_comment_tree").html("Collapse All Comments");
+    }
+    else
+    {
+      jQuery("#show_discussion_popup .comments_div").hide();
+      jQuery(".main_comment_div").show();
+      jQuery("#show_discussion_popup .collapse_btn").addClass("expand_btn").removeClass("collapse_btn");
+      jQuery(".toggle_comment_tree").html("Expand All Comments");
+    }
+  }
+</script>
+<style>
+  .discuss_title_pic_text{
+    font-weight: bold;
+    border-top:none;
+    border-bottom: 1px solid #E2E1E1;
+    margin-left:10px;
+    width:605px;
+  }
+</style>

@@ -1,0 +1,25 @@
+<div class="grey_overlay" id="notification_to_group_user">
+  <div class="pop_up" >
+    <div class="popup_inner_div">
+      <a href="javascript:void(0);" onclick="jQuery('#notification_to_group_user').fadeOut();" class="popup_close_btn">&nbsp;</a>
+      <div class="popup_content">
+         <span class="popup_heading">Notification</span>
+         <table width="100%" class="popup_form_table" align="center">
+            <tr>
+              <td  align="center" width="100%" colspan="2"><span class="font_for_message_display">You have a new notification.</span></td>
+            </tr>
+            <tr>
+              <td align="right" width="45%" ><%= link_to "View", {:action => "notifications", :controller => "discussion_groups"}, :class => "notification_action_link"   %></td>
+              <td align="left" width="55%" ><a href="javascript:void(0);" onclick="jQuery('#notification_to_group_user').fadeOut();" class = "notification_action_link" style="padding-left: 20px;">Cancel</a></td>
+            </tr>
+          </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  jQuery(document).ready(function(){
+    jQuery("#notification_to_group_user .pop_up").center();
+  });
+    jQuery('#notification_to_group_user').show();
+</script>

@@ -1,0 +1,17 @@
+<div class="clear_both d_group_table_div">
+  <table>
+    <% if @login_user.groups.empty? %>
+      <tr>
+        <td colspan="2">You have no crowds</td>
+      </tr>
+    <% else %>
+      <% @login_user.groups.each do |crowd|  %>
+        <tr>
+          <td><input class="posting_group" name="posted_to_crowds[]" type="checkbox" id="group_<%= crowd.id %>" value="<%= crowd.id   %>" /></td>
+          <td><span class="grp_name"><%= crowd.name %></span></td>
+        </tr>
+      <% end %>
+    <% end %>
+  </table>
+  <span class="error clear_both" id="group_id_error"></span>
+</div>

@@ -1,0 +1,48 @@
+<%= javascript_include_tag "discussion.js" %>
+<div class="left_panel" align="center">
+  <%= render :partial => "users/user_left_panel" %>
+</div>
+<div class="main_panel">
+  <span class="blue_header">Invitations</span>
+  <div class="search_result_for_group_error">
+    <span id="search_result_for_group_error"><% if @notifications.blank? && @disc_notifications.blank? %>There are no invitations available for you.<% end %></span>
+  </div>
+  <table id="notifications_tab">
+    <% @notifications.each do |notification| %>
+      <tr id="group_invition_<%= notification.id %>">
+      <span id="accept_invitation_<%= notification.id %>">
+        <td>You have a invitation from <%= notification.discussion_group.user.username %> to join the <%= notification.discussion_group.name %> group</td>
+        <td><%= link_to "Accept", { :action => "accept_invitation", :id => notification.id }, :remote => true, :class => "album_action_link" %></td>
+        <td><span class="link_seperator">|</span></td>
+        <td><%= link_to "Decline", { :action => "decline_invitation", :id => notification.id }, :remote => true, :class => "album_action_link" %></td>
+      </span>
+      </tr>
+    <% end %>
+    <% @disc_notifications.each do |notification| %>
+      <tr>
+      <span>
+        <td>You have a invitation to join the the <a href="javascript:void(0);" onclick="show_discussion(<%= notification.invitable_id %>);">discussion</a></td>
+        <td><%= link_to "Accept", { :action => "accept_invitation", :id => notification.id,:type=>"Discussion" }, :remote => true, :class => "album_action_link disc_invitation_link" %></td>
+        <td><span class="link_seperator">|</span></td>
+        <td><%= link_to "Decline", { :action => "decline_invitation", :id => notification.id, :type=>"Discussion" }, :remote => true, :class => "album_action_link disc_invitation_link" %></td>
+      </span>
+      </tr>
+    <% end %>
+  </table>
+</div>
+
+<script type="text/javascript">
+  jQuery(function(){
+    jQuery('.disc_invitation_link').bind('ajax:success',  function(evt, data, status, xhr){
+      jQuery(this).closest("tr").fadeOut("slow").remove();
+      if(jQuery("#notifications_tab tr").length)
+      {
+        jQuery("search_result_for_group_error").html("There are no invitations available for you.")
+      }
+     
+
+    }).bind("ajax:error", function(evt, data, status, xhr){
+      display_flash_message("Please try again.")
+    });
+  });
+</script>
